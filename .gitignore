@@ -31,6 +31,9 @@ build/Release
 node_modules
 jspm_packages
 
+#resources
+public/images/*
+
 # Optional npm cache directory
 .npm
 
