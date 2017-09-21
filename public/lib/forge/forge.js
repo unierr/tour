@@ -12,7 +12,7 @@ var FORGE = FORGE || {};
  * @type {string}
  * @const
  */
-FORGE.VERSION = '0.9.4';
+FORGE.VERSION = '0.9.3';
 
 /**
  * Array of {@link FORGE.Viewer} uids.
@@ -196,24 +196,14 @@ FORGE.BaseObject.prototype._unregister = function()
 FORGE.BaseObject.prototype._stdout = function(value, mode)
 {
     var m = mode || "log";
-    var consoleLog = [];
-    if (FORGE.Device.chrome === true || FORGE.Device.firefox === true)
-    {
-        consoleLog = [ "%c[ForgeJS]%c "
-            + "FORGE." + this._className + ": " + value + " %c(@"
-            + window.performance.now().toFixed(2) + "ms)",
-            "background: #e2edff; color: #4286f4; font-weight: 700;",
-            "font-weight: 400;",
-            "color: #AAA;"
-            ];
-    }
-    else
-    {
-        consoleLog = [ "[ForgeJS] FORGE." + this._className + ": " + value + " (@"
-            + window.performance.now().toFixed(2) + "ms)"
-            ];
-    }
-    console[m].apply(console, consoleLog);
+    console[m].apply(console, [
+        "%c[ForgeJS]%c "
+        + "FORGE." + this._className + " : " + value + " %c(@"
+        + window.performance.now().toFixed(2) + "ms)",
+        "background: #e2edff; color: #4286f4; font-weight: 700",
+        "font-weight: 400",
+        "color: #AAA"
+    ]);
 
     if(typeof value === "object" && value !== null)
     {
@@ -515,14 +505,6 @@ FORGE.Viewer = function(parent, config, callbacks)
     this._domHotspotContainer = null;
 
     /**
-     * The DOM hotspot style container reference.
-     * @name FORGE.Viewer#_domHotspotStyle
-     * @type {Element|HTMLStyleElement}
-     * @private
-     */
-    this._domHotspotStyle = null;
-
-    /**
      * The plugins container reference.
      * @name FORGE.Viewer#_pluginContainer
      * @type {FORGE.DisplayObjectContainer}
@@ -537,14 +519,6 @@ FORGE.Viewer = function(parent, config, callbacks)
      * @private
      */
     this._canvas = null;
-
-     /**
-     * System module reference.
-     * @name FORGE.Viewer#_system
-     * @type {FORGE.System}
-     * @private
-     */
-    this._system = null;
 
     /**
      * Audio / mixer interface reference.
@@ -577,6 +551,14 @@ FORGE.Viewer = function(parent, config, callbacks)
      * @private
      */
     this._actions = null;
+
+    /**
+     * Dependencies interface reference.
+     * @name  FORGE.Viewer#_dependencies
+     * @type {FORGE.DependencyManager}
+     * @private
+     */
+    this._dependencies = null;
 
     /**
      * Director's cut track manager
@@ -795,11 +777,6 @@ FORGE.Viewer.prototype._boot = function(callback)
      * DO NOT CHANGE ANYTHING UNLESS YOU ARE SURE OF WHAT YOURE DOING
      */
 
-    if(this._alive === false)
-    {
-        return;
-    }
-
     this._uid = "FORGE-instance-" + String(FORGE.VIEWERS.length);
     FORGE.VIEWERS.push(this._uid);
     this._register();
@@ -812,6 +789,7 @@ FORGE.Viewer.prototype._boot = function(callback)
     this._createCanvas();
 
     this._system = new FORGE.System(this);
+    this._dependencies = new FORGE.DependencyManager(this);
     this._clock = new FORGE.Clock(this);
     this._audio = new FORGE.SoundManager(this);
     this._raf = new FORGE.RequestAnimationFrame(this);
@@ -1018,10 +996,6 @@ FORGE.Viewer.prototype._createContainers = function()
     this._domHotspotContainer.maximize(true);
     this._container.addChild(this._domHotspotContainer);
 
-    this._domHotspotStyle = document.createElement("style");
-    this._domHotspotStyle.type = "text/css";
-    document.head.appendChild(this._domHotspotStyle);
-
     this._pluginContainer = new FORGE.DisplayObjectContainer(this);
     this._pluginContainer.id = "FORGE-plugin-container-" + this._uid;
     this._container.index = 0;
@@ -1174,169 +1148,91 @@ FORGE.Viewer.prototype.destroy = function()
      * DO NOT CHANGE ANYTHING UNLESS YOU ARE SURE OF WHAT YOURE DOING
      */
 
-    if(this._raf !== null)
-    {
-        this._raf.destroy();
-        this._raf = null;
-    }
-
-    if(this._system !== null)
-    {
-        this._system.destroy();
-        this._system = null;
-    }
-
-    if(this._plugins !== null)
-    {
-        this._plugins.destroy();
-        this._plugins = null;
-    }
-
-    if(this._load !== null)
-    {
-        this._load.destroy();
-        this._load = null;
-    }
-
-    if(this._history !== null)
-    {
-        this._history.destroy();
-        this._history = null;
-    }
-
-    if(this._clock !== null)
-    {
-        this._clock.destroy();
-        this._clock = null;
-    }
-
-    if (this._controllers !== null)
-    {
-        this._controllers.destroy();
-        this._controllers = null;
-    }
-
-    if(this._keyboard !== null)
-    {
-        this._keyboard.destroy();
-        this._keyboard = null;
-    }
-
-    if(this._gyroscope !== null)
-    {
-        this._gyroscope.destroy();
-        this._gyroscope = null;
-    }
-
-    if(this._gamepad !== null)
-    {
-        this._gamepad.destroy();
-        this._gamepad = null;
-    }
-
-    if(this._hotspots !== null)
-    {
-        this._hotspots.destroy();
-        this._hotspots = null;
-    }
-
-    if(this._director !== null)
-    {
-        this._director.destroy();
-        this._director = null;
-    }
-
-    if(this._renderManager !== null)
-    {
-        this._renderManager.destroy();
-        this._renderManager = null;
-    }
-
-    if(this._canvas !== null)
-    {
-        this._canvas.destroy();
-        this._canvas = null;
-    }
-
-    if(this._canvasContainer !== null)
-    {
-        this._canvasContainer.destroy();
-        this._canvasContainer = null;
-    }
-
-    if(this._domHotspotContainer !== null)
-    {
-        this._domHotspotContainer.destroy();
-        this._domHotspotContainer = null;
-    }
-
-    if(this._pluginContainer !== null)
-    {
-        this._pluginContainer.destroy();
-        this._pluginContainer = null;
-    }
-
-    if(this._container !== null)
-    {
-        this._container.destroy();
-        this._container = null;
-    }
-
-    if(this._postProcessing !== null)
-    {
-        this._postProcessing.destroy();
-        this._postProcessing = null;
-    }
-
-    if(this._actions !== null)
-    {
-        this._actions.destroy();
-        this._actions = null;
-    }
-
-    if(this._display !== null)
-    {
-        this._display.destroy();
-        this._display = null;
-    }
-
-    if(this._playlists !== null)
-    {
-        this._playlists.destroy();
-        this._playlists = null;
-    }
-
-    if(this._audio !== null)
-    {
-        this._audio.destroy();
-        this._audio = null;
-    }
-
-    if(this._story !== null)
-    {
-        this._story.destroy();
-        this._story = null;
-    }
-
-    if(this._tween !== null)
-    {
-        this._tween.destroy();
-        this._tween = null;
-    }
-
-    if(this._cache !== null)
-    {
-        this._cache.destroy();
-        this._cache = null;
-    }
-
-    if(this._i18n !== null)
-    {
-        this._i18n.destroy();
-        this._i18n = null;
-    }
+    this._raf.stop();
 
     this._parent = null;
+
+    this._system.destroy();
+    this._system = null;
+
+    this._plugins.destroy();
+    this._plugins = null;
+
+    this._raf.destroy();
+    this._raf = null;
+
+    this._load.destroy();
+    this._load = null;
+
+    this._history.destroy();
+    this._history = null;
+
+    this._clock.destroy();
+    this._clock = null;
+
+    this._keyboard.destroy();
+    this._keyboard = null;
+
+    this._gyroscope.destroy();
+    this._gyroscope = null;
+
+    this._gamepad.destroy();
+    this._gamepad = null;
+
+    this._hotspots.destroy();
+    this._hotspots = null;
+
+    this._director.destroy();
+    this._director = null;
+
+    this._renderManager.destroy();
+    this._renderManager = null;
+
+    this._canvas.destroy();
+    this._canvas = null;
+
+    this._canvasContainer.destroy();
+    this._canvasContainer = null;
+
+    this._domHotspotContainer.destroy();
+    this._domHotspotContainer = null;
+
+    this._postProcessing.destroy();
+    this._postProcessing = null;
+
+    this._pluginContainer.destroy();
+    this._pluginContainer = null;
+
+    this._actions.destroy();
+    this._actions = null;
+
+    this._container.destroy();
+    this._container = null;
+
+    this._display.destroy();
+    this._display = null;
+
+    this._playlists.destroy();
+    this._playlists = null;
+
+    this._audio.destroy();
+    this._audio = null;
+
+    this._story.destroy();
+    this._story = null;
+
+    this._cache.destroy();
+    this._cache = null;
+
+    this._tween.destroy();
+    this._tween = null;
+
+    this._i18n.destroy();
+    this._i18n = null;
+
+    this._controllers.destroy();
+    this._controllers = null;
+
     this._callbacks = null;
 
     if (this._onReady !== null)
@@ -1529,21 +1425,6 @@ Object.defineProperty(FORGE.Viewer.prototype, "domHotspotContainer",
 });
 
 /**
- * Get the viewer DOM hotspot style container.
- * @name FORGE.Viewer#domHotspotStyle
- * @type {HTMLStyleElement}
- * @readonly
- */
-Object.defineProperty(FORGE.Viewer.prototype, "domHotspotStyle",
-{
-    /** @this {FORGE.Viewer} */
-    get: function()
-    {
-        return this._domHotspotStyle;
-    }
-});
-
-/**
  * Get the viewer plugin container.
  * @name FORGE.Viewer#pluginContainer
  * @type {FORGE.DisplayObjectContainer}
@@ -1630,6 +1511,21 @@ Object.defineProperty(FORGE.Viewer.prototype, "actions",
     get: function()
     {
         return this._actions;
+    }
+});
+
+/**
+ * Get the viewer dependencies module.
+ * @name  FORGE.Viewer#dependencies
+ * @type {FORGE.DependencyManager}
+ * @readonly
+ */
+Object.defineProperty(FORGE.Viewer.prototype, "dependencies",
+{
+    /** @this {FORGE.Viewer} */
+    get: function()
+    {
+        return this._dependencies;
     }
 });
 
@@ -2509,7 +2405,6 @@ FORGE.UID = (function(c)
         FORGE.BaseObject.call(this, "UID");
     };
 });
-
 
 /**
  * FORGE.EventDispatcher can dispatch and reference listeners.
@@ -5962,19 +5857,8 @@ FORGE.Math.clamp = function(value, min, max)
  */
 FORGE.Math.wrap = function(value, min, max)
 {
-    if (value === max)
-    {
-        return max;
-    }
-
     var range = max - min;
-
-    if (range === 0)
-    {
-        return min;
-    }
-
-    return ((value - min) % range + range) % range + min;
+    return (((value - min) % range) + range) % (range) + min;
 };
 
 /**
@@ -6011,7 +5895,7 @@ FORGE.Math.smoothStep = function(value, edge0, edge1)
  * @method FORGE.Math.isPowerOfTwo
  * @param  {number} value - value to check
  */
-FORGE.Math.isPowerOfTwo = function(value)
+FORGE.Math.isPowerOfTwo = function(value) 
 {
     return ((value != 0) && !(value & (value - 1)));
 };
@@ -6076,77 +5960,6 @@ FORGE.Math.eulerToRotationMatrix = function(yaw, pitch, roll, orderYPR)
                              0,        0,                      0, 1
      );
     //jscs:enable
-};
-
-/**
- * Converts spherical coordinates to cartesian, respecting the FORGE
- * coordinates system.
- *
- * @method FORGE.Math.sphericalToCartesian
- * @param {number} radius - radius
- * @param {number} theta - theta angle
- * @param {number} phi - phi angle
- * @param {string} [unit=radian] - The unit used for theta and phi arguments
- * @return {CartesianCoordinates} the resulting cartesian coordinates
- */
-FORGE.Math.sphericalToCartesian = function(radius, theta, phi, unit)
-{
-    var res = {};
-
-    if (unit === FORGE.Math.DEGREES)
-    {
-        theta = FORGE.Math.degToRad(theta);
-        phi = FORGE.Math.degToRad(phi);
-    }
-
-    // wrap phi in [-π/2; π/2]
-    phi = FORGE.Math.wrap(phi, -Math.PI / 2, Math.PI / 2);
-    // invert theta if radius is negative
-    theta += radius < 0 ? Math.PI : 0;
-    // wrap theta in [0; 2π)
-    theta = FORGE.Math.wrap(theta, 0, 2 * Math.PI);
-    // abs so the radius is positive
-    radius = Math.abs(radius);
-
-    res.x = radius * Math.cos(phi) * Math.sin(theta);
-    res.y = radius * Math.sin(phi);
-    res.z = -radius * Math.cos(phi) * Math.cos(theta);
-
-    return res;
-};
-
-/**
- * Converts cartesian coordinates to spherical, respecting the FORGE
- * coordinates system.
- *
- * @method FORGE.Math.cartesianToSpherical
- * @param {number} x - x
- * @param {number} y - y
- * @param {number} z - z
- * @param {string} [unit=radian] - The unit used to return spherical
- * @return {SphericalCoordinates}
- */
-FORGE.Math.cartesianToSpherical = function(x, y, z, unit)
-{
-    var res = {};
-
-    res.radius = Math.sqrt(x*x + y*y + z*z);
-
-    if (res.radius === 0)
-    {
-        return { radius: 0, theta: 0, phi: 0 };
-    }
-
-    res.phi = Math.asin(y / res.radius);
-    res.theta = Math.atan2(x, -z || 0); // we want to avoid -z = -0
-
-    if(unit === FORGE.Math.DEGREES)
-    {
-        res.phi = FORGE.Math.radToDeg(res.phi);
-        res.theta = FORGE.Math.radToDeg(res.theta);
-    }
-
-    return res;
 };
 
 /**
@@ -6902,14 +6715,6 @@ FORGE.Media = function(viewer, config)
     this._loaded = false;
 
     /**
-     * Events object that will keep references of the ActionEventDispatcher
-     * @name FORGE.Media#_events
-     * @type {Object<FORGE.ActionEventDispatcher>}
-     * @private
-     */
-    this._events = null;
-
-    /**
      * On load complete event dispatcher.
      * @name  FORGE.Media#_onLoadComplete
      * @type {FORGE.EventDispatcher}
@@ -6932,8 +6737,6 @@ FORGE.Media.prototype.constructor = FORGE.Media;
  */
 FORGE.Media.prototype._boot = function()
 {
-    this._events = {};
-
     // This event can no be a lazzy one (memorize is true)
     this._onLoadComplete = new FORGE.EventDispatcher(this, true);
 
@@ -6968,11 +6771,6 @@ FORGE.Media.prototype._parseConfig = function(config)
     if (typeof config.source !== "undefined" && typeof config.source.format === "undefined")
     {
         config.source.format = FORGE.MediaFormat.FLAT;
-    }
-
-    if (typeof config.events === "object" && config.events !== null)
-    {
-        this._createEvents(config.events);
     }
 
     if (this._type === FORGE.MediaType.GRID)
@@ -7067,44 +6865,7 @@ FORGE.Media.prototype._parseConfig = function(config)
         this._displayObject.load(source.url);
 
         this._displayObject.onLoadedMetaData.addOnce(this._onLoadedMetaDataHandler, this);
-        this._displayObject.onPlay.add(this._onPlayHandler, this);
-        this._displayObject.onPause.add(this._onPauseHandler, this);
-        this._displayObject.onSeeked.add(this._onSeekedHandler, this);
-        this._displayObject.onEnded.add(this._onEndedHandler, this);
-
-
         return;
-    }
-};
-
-/**
- * Create action events dispatchers.
- * @method FORGE.Media#_createEvents
- * @private
- * @param {SceneMediaEventsConfig} events - The events config of the media.
- */
-FORGE.Media.prototype._createEvents = function(events)
-{
-    var event;
-    for(var e in events)
-    {
-        event = new FORGE.ActionEventDispatcher(this._viewer, e);
-        event.addActions(events[e]);
-        this._events[e] = event;
-    }
-};
-
-/**
- * Clear all object events.
- * @method Media.Object3D#_clearEvents
- * @private
- */
-FORGE.Media.prototype._clearEvents = function()
-{
-    for(var e in this._events)
-    {
-        this._events[e].destroy();
-        this._events[e] = null;
     }
 };
 
@@ -7154,62 +6915,6 @@ FORGE.Media.prototype._notifyLoadComplete = function()
 };
 
 /**
- * Internal handler on video play.
- * @method FORGE.Media#_onPlayHandler
- * @private
- */
-FORGE.Media.prototype._onPlayHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onPlay, "ActionEventDispatcher") === true)
-    {
-        this._events.onPlay.dispatch();
-    }
-};
-
-/**
- * Internal handler on video pause.
- * @method FORGE.Media#_onPauseHandler
- * @private
- */
-FORGE.Media.prototype._onPauseHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onPause, "ActionEventDispatcher") === true)
-    {
-        this._events.onPause.dispatch();
-    }
-};
-
-/**
- * Internal handler on video seeked.
- * @method FORGE.Media#_onSeekedHandler
- * @private
- */
-FORGE.Media.prototype._onSeekedHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onSeeked, "ActionEventDispatcher") === true)
-    {
-        this._events.onSeeked.dispatch();
-    }
-};
-
-/**
- * Internal handler on video ended.
- * @method FORGE.Media#_onEndedHandler
- * @private
- */
-FORGE.Media.prototype._onEndedHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onEnded, "ActionEventDispatcher") === true)
-    {
-        this._events.onEnded.dispatch();
-    }
-};
-
-/**
  * Media destroy sequence
  *
  * @method FORGE.Media#destroy
@@ -7227,9 +6932,6 @@ FORGE.Media.prototype.destroy = function()
         this._onLoadComplete.destroy();
         this._onLoadComplete = null;
     }
-
-    this._clearEvents();
-    this._events = null;
 
     this._viewer = null;
 };
@@ -7442,28 +7144,20 @@ FORGE.RenderManager = function(viewer)
     this._renderPipelineReady = false;
 
     /**
+     * Hotspot renderer ready flag
+     * @name FORGE.RenderManager#_hotspotsReady
+     * @type boolean
+     * @private
+     */
+    this._hotspotsReady = false;
+
+    /**
      * Event dispatcher for background renderer ready.
      * @name FORGE.RenderManager#_onBackgroundReady
      * @type {FORGE.EventDispatcher}
      * @private
      */
     this._onBackgroundReady = null;
-
-    /**
-     * Event dispatcher for on before render.
-     * @name FORGE.RenderManager#_onBeforeRender
-     * @type {FORGE.EventDispatcher}
-     * @private
-     */
-    this._onBeforeRender = null;
-
-    /**
-     * Event dispatcher for on after render.
-     * @name FORGE.RenderManager#_onAfterRender
-     * @type {FORGE.EventDispatcher}
-     * @private
-     */
-    this._onAfterRender = null;
 
     FORGE.BaseObject.call(this, "RenderManager");
 
@@ -7606,6 +7300,7 @@ FORGE.RenderManager.prototype._setupMedia = function()
  */
 FORGE.RenderManager.prototype._onSceneUnloadStartHandler = function()
 {
+    this._hotspotsReady = false;
     this._renderPipelineReady = false;
 
     this._clearBackgroundRenderer();
@@ -7921,7 +7616,7 @@ FORGE.RenderManager.prototype._setBackgroundRenderer = function(type)
         if (typeof mediaConfig.source !== "undefined" && mediaConfig.source !== null)
         {
             config.mediaFormat = mediaConfig.source.format;
-            var ratio = media.displayObject.element.width / media.displayObject.element.height || 1;
+            var ratio = media.displayObject.element.width / media.displayObject.element.height;
 
             if (typeof mediaConfig.source.fov !== "undefined")
             {
@@ -8119,11 +7814,6 @@ FORGE.RenderManager.prototype.render = function()
         return;
     }
 
-    if(this._onBeforeRender !== null)
-    {
-        this._onBeforeRender.dispatch();
-    }
-
     if (this._backgroundRenderer !== null)
     {
         this._backgroundRenderer.update();
@@ -8160,11 +7850,6 @@ FORGE.RenderManager.prototype.render = function()
     if (this._renderDisplay.presentingVR === true)
     {
         this._renderDisplay.submitFrame();
-    }
-
-    if(this._onAfterRender !== null)
-    {
-        this._onAfterRender.dispatch();
     }
 
     // @todo implement event for render stats (fps, objects count...)
@@ -8300,18 +7985,6 @@ FORGE.RenderManager.prototype.destroy = function()
     {
         this._renderPipeline.destroy();
         this._renderPipeline = null;
-    }
-
-    if(this._onBeforeRender !== null)
-    {
-        this._onBeforeRender.destroy();
-        this._onBeforeRender = null;
-    }
-
-    if(this._onAfterRender !== null)
-    {
-        this._onAfterRender.destroy();
-        this._onAfterRender = null;
     }
 
     this._clock = null;
@@ -8514,21 +8187,6 @@ Object.defineProperty(FORGE.RenderManager.prototype, "backgroundReady",
 });
 
 /**
- * Get the FORGE.ObjectRenderer instance
- * @name FORGE.RenderManager#objects
- * @type {FORGE.ObjectRenderer}
- * @readonly
- */
-Object.defineProperty(FORGE.RenderManager.prototype, "objects",
-{
-    /** @this {FORGE.RenderManager} */
-    get: function()
-    {
-        return this._objectRenderer;
-    }
-});
-
-/**
  * Get the onBackgroundReady {@link FORGE.EventDispatcher}.
  * @name FORGE.RenderManager#onBackgroundReady
  * @type {FORGE.EventDispatcher}
@@ -8549,42 +8207,32 @@ Object.defineProperty(FORGE.RenderManager.prototype, "onBackgroundReady",
 });
 
 /**
- * Get the onBeforeRender {@link FORGE.EventDispatcher}.
- * @name FORGE.RenderManager#onBeforeRender
- * @type {FORGE.EventDispatcher}
+ * Get the objects
+ * @name FORGE.RenderManager#objects
+ * @type {FORGE.ObjectRenderer}
  * @readonly
  */
-Object.defineProperty(FORGE.RenderManager.prototype, "onBeforeRender",
+Object.defineProperty(FORGE.RenderManager.prototype, "objects",
 {
     /** @this {FORGE.RenderManager} */
     get: function()
     {
-        if (this._onBeforeRender === null)
-        {
-            this._onBeforeRender = new FORGE.EventDispatcher(this);
-        }
-
-        return this._onBeforeRender;
+        return this._objectRenderer;
     }
 });
 
 /**
- * Get the onAfterRender {@link FORGE.EventDispatcher}.
- * @name FORGE.RenderManager#onAfterRender
- * @type {FORGE.EventDispatcher}
+ * Get the hotspotsReady flag
+ * @name FORGE.RenderManager#hotspotsReady
+ * @type {boolean}
  * @readonly
  */
-Object.defineProperty(FORGE.RenderManager.prototype, "onAfterRender",
+Object.defineProperty(FORGE.RenderManager.prototype, "hotspotsReady",
 {
     /** @this {FORGE.RenderManager} */
     get: function()
     {
-        if (this._onAfterRender === null)
-        {
-            this._onAfterRender = new FORGE.EventDispatcher(this);
-        }
-
-        return this._onAfterRender;
+        return this._hotspotsReady;
     }
 });
 
@@ -9511,7 +9159,7 @@ FORGE.RenderPipeline.prototype.render = function(camera)
             // Addition pass will blend readbuffer content unless last pass needs swap (ShaderPass for example)
             var texture = composer.readBuffer.texture;
 
-            if (typeof lastPass !== "undefined" && lastPass.needsSwap === true)
+            if (lastPass.needsSwap === true)
             {
                 texture = composer.writeBuffer.texture;
             }
@@ -10767,7 +10415,7 @@ FORGE.BackgroundMeshRenderer.prototype._boot = function()
  */
 FORGE.BackgroundMeshRenderer.prototype._setDisplayObject = function(displayObject)
 {
-    if (this._mesh === null)
+    if (this._mesh === null) 
     {
         this._updateInternals();
     }
@@ -12454,7 +12102,7 @@ var vert_attributes_wireframe = "attribute vec3 position;\nattribute vec3 normal
 
 FORGE.ShaderChunk["vert_attributes_wireframe"] = vert_attributes_wireframe;
 
-var stw_frag_proj_flat = "\n#include <defines>\nuniform sampler2D tTexture;\nuniform vec2 tViewportResolution;\nuniform float tViewportResolutionRatio;\nuniform float tTextureRatio;\nuniform float tFov;\nuniform float tYaw;\nuniform float tPitch;\nuniform int tRepeatX;\nuniform int tRepeatY;\n#include <helpers>\n#include <coordinates>\n#include <texcoords>\nvoid main() {\n    vec2 sTexResolution = PI * vec2(tTextureRatio, 1.0);\n    vec2 sReference = vec2(tYaw, tPitch) + sTexResolution / 2.0;\n    vec2 sTexel = sReference + (tFov * 0.5) * getFragment();\n    vec2 uv = sTexel / sTexResolution;\n    if (isTrue(tRepeatX)) {\n        uv.x = mod(uv.x, 1.0);\n    }\n    else if (uv.x > 1.0 || uv.x < 0.0) {\n        discard;\n    }\n    if (isTrue(tRepeatY)) {\n        uv.y = mod(uv.y, 1.0);\n    }\n    else if (uv.y > 1.0 || uv.y < 0.0) {\n        discard;\n    }\n    gl_FragColor = vec4(texture2D(tTexture, uv).rgb, 1.0);\n}\n";
+var stw_frag_proj_flat = "\n#include <defines>\nuniform sampler2D tTexture;\nuniform vec2 tViewportResolution;\nuniform float tViewportResolutionRatio;\nuniform float tTextureRatio;\nuniform vec2 tTextureSize;\nuniform float tFov;\nuniform float tYaw;\nuniform float tPitch;\nuniform int tRepeatX;\nuniform int tRepeatY;\n#include <helpers>\n#include <coordinates>\n#include <texcoords>\nvoid main() {\n    vec2 sTexResolution = PI * vec2(tTextureRatio, 1.0);\n    vec2 sReference = vec2(tYaw, tPitch) + sTexResolution / 2.0;\n    vec2 sTexel = sReference + (tFov * 0.5) * getFragment();\n    vec2 uv = sTexel / sTexResolution;\n    if (isTrue(tRepeatX)) {\n        uv.x = mod(uv.x, 1.0);\n    }\n    else if (uv.x > 1.0 || uv.x < 0.0) {\n        discard;\n    }\n    if (isTrue(tRepeatY)) {\n        uv.y = mod(uv.y, 1.0);\n    }\n    else if (uv.y > 1.0 || uv.y < 0.0) {\n        discard;\n    }\n    gl_FragColor = vec4(texture2D(tTexture, uv).rgb, 1.0);\n}\n";
 
 FORGE.ShaderChunk["stw_frag_proj_flat"] = stw_frag_proj_flat;
 
@@ -12482,23 +12130,47 @@ var wts_frag_color = "\n#include <defines>\nuniform vec3 tColor;\nuniform float 
 
 FORGE.ShaderChunk["wts_frag_color"] = wts_frag_color;
 
-var wts_frag_wireframe = "\n#extension GL_OES_standard_derivatives : enable \n#include <defines>\n#define WIRE_THICKNESS 1.50\nuniform vec3 tColor;\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec2 dfdx = dFdx(vQuadrilateralCoords);\n    vec2 dfdy = dFdy(vQuadrilateralCoords);\n    vec2 threshold = vec2(WIRE_THICKNESS * sqrt(dfdx * dfdx + dfdy * dfdy));\n    vec2 amount = smoothstep(vec2(0.0), WIRE_THICKNESS * threshold, vec2(1.0) - abs(vQuadrilateralCoords));\n    float alpha = 1.0 - amount.x * amount.y;\n    gl_FragColor = vec4(tColor.rgb, alpha);\n}\n";
+var wts_frag_depth_drawing = "\n#include <defines>\nvarying float vDepth;\nvoid main() {\n    gl_FragColor = vec4(vDepth, vDepth, vDepth, 1.0);\n}\n";
+
+FORGE.ShaderChunk["wts_frag_depth_drawing"] = wts_frag_depth_drawing;
+
+var wts_frag_equirectangular = "\n#include <defines>\nuniform sampler2D tTexture;\nvarying vec3 vWorldPosition;\nvoid main() {\n    vec3 direction = normalize( vWorldPosition );\n    vec2 sampleUV;\n    sampleUV.y = clamp( direction.y * 0.5 + 0.5, 0.0, 1.0 );\n    sampleUV.x = atan( direction.z, direction.x ) * RECIPROCAL_PI2 - 0.25;\n    sampleUV.x += (1.0 - step(0.0, sampleUV.x));\n    gl_FragColor = texture2D( tTexture, sampleUV );\n}\n";
+
+FORGE.ShaderChunk["wts_frag_equirectangular"] = wts_frag_equirectangular;
+
+var wts_frag_wireframe = "\n#extension GL_OES_standard_derivatives : enable \n#include <defines>\n#define WIRE_THICKNESS 1.50\nuniform vec3 tColor;\nvarying vec2 vUv;\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec2 dfdx = dFdx(vQuadrilateralCoords);\n    vec2 dfdy = dFdy(vQuadrilateralCoords);\n    vec2 threshold = vec2(WIRE_THICKNESS * sqrt(dfdx * dfdx + dfdy * dfdy));\n    vec2 amount = smoothstep(vec2(0.0), WIRE_THICKNESS * threshold, vec2(1.0) - abs(vQuadrilateralCoords));\n    float alpha = 1.0 - amount.x * amount.y;\n    gl_FragColor = vec4(tColor.rgb, alpha);\n}\n";
 
 FORGE.ShaderChunk["wts_frag_wireframe"] = wts_frag_wireframe;
 
-var wts_vert_gopro = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tProjectionDistance;\nvarying vec2 vUv;\nvoid main() {\n    vec4 spherePt = normalize(modelViewMatrix * vec4( position, 1.0 ));\n    float radius = 1.0 - 0.5 * tProjectionDistance;\n    float offset = radius - 1.0;\n    spherePt.xyz *= radius;\n    spherePt.z += offset;\n    gl_Position = projectionMatrix * spherePt;\n    vUv = uv;\n}\n";
+var wts_vert_gopro = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tProjectionDistance;\nuniform float tProjectionScale;\nuniform float tViewportResolutionRatio;\nvarying vec2 vUv;\nvoid main() {\n    vec4 spherePt = normalize(modelViewMatrix * vec4( position, 1.0 ));\n    float radius = 1.0 - 0.5 * tProjectionDistance;\n    float offset = radius - 1.0;\n    spherePt.xyz *= radius;\n    spherePt.z += offset;\n    gl_Position = projectionMatrix * spherePt;\n    vUv = uv;\n}\n";
 
 FORGE.ShaderChunk["wts_vert_gopro"] = wts_vert_gopro;
 
-var wts_vert_gopro_wireframe = "\n#include <defines>\n#include <vert_attributes_wireframe>\n#include <uniforms>\nuniform float tProjectionDistance;\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec4 spherePt = normalize(modelViewMatrix * vec4( position, 1.0 ));\n    float radius = 1.0 - 0.5 * tProjectionDistance;\n    float offset = radius - 1.0;\n    spherePt.xyz *= radius;\n    spherePt.z += offset;\n    gl_Position = projectionMatrix * spherePt;\n    vQuadrilateralCoords = quadrilateralCoords;\n}\n";
+var wts_vert_gopro_equirectangular = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tProjectionDistance;\nuniform float tProjectionScale;\nuniform float tViewportResolutionRatio;\nvarying vec3 vWorldPosition;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    vec4 origin = vec4(vec3(0.0), 1.0);\n    camPt.z -= tProjectionDistance * distance(camPt, origin);\n    camPt.xyz /= max(1.0, tProjectionScale);\n    gl_Position = projectionMatrix * camPt;\n    vWorldPosition = vec3(position);\n}\n";
+
+FORGE.ShaderChunk["wts_vert_gopro_equirectangular"] = wts_vert_gopro_equirectangular;
+
+var wts_vert_gopro_wireframe = "\n#include <defines>\n#include <vert_attributes_wireframe>\n#include <uniforms>\nuniform float tProjectionDistance;\nuniform float tProjectionScale;\nuniform float tViewportResolutionRatio;\nvarying vec2 vUv;\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec4 spherePt = normalize(modelViewMatrix * vec4( position, 1.0 ));\n    float radius = 1.0 - 0.5 * tProjectionDistance;\n    float offset = radius - 1.0;\n    spherePt.xyz *= radius;\n    spherePt.z += offset;\n    gl_Position = projectionMatrix * spherePt;\n    vUv = uv;\n    vQuadrilateralCoords = quadrilateralCoords;\n}\n";
 
 FORGE.ShaderChunk["wts_vert_gopro_wireframe"] = wts_vert_gopro_wireframe;
 
-var wts_vert_rectilinear = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nvarying vec2 vUv;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    gl_Position = projectionMatrix * camPt;\n    vUv = uv;\n}\n";
+var wts_vert_littleplanet = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tProjectionScale;\nuniform float tViewportResolutionRatio;\nvarying vec2 vUv;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    camPt.z -= distance(camPt, vec4(vec3(0.0), 1.0));\n    camPt.xyz /= tProjectionScale;\n    gl_Position = projectionMatrix * camPt;\n    vUv = uv;\n}\n";
+
+FORGE.ShaderChunk["wts_vert_littleplanet"] = wts_vert_littleplanet;
+
+var wts_vert_littleplanet_equirectangular = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tProjectionScale;\nuniform float tViewportResolutionRatio;\nvarying vec3 vWorldPosition;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    camPt.z -= distance(camPt, vec4(vec3(0.0), 1.0));\n    camPt.xyz /= tProjectionScale;\n    gl_Position = projectionMatrix * camPt;\n    vWorldPosition = vec3(position);\n}\n";
+
+FORGE.ShaderChunk["wts_vert_littleplanet_equirectangular"] = wts_vert_littleplanet_equirectangular;
+
+var wts_vert_rectilinear = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tViewportResolutionRatio;\nvarying vec2 vUv;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    gl_Position = projectionMatrix * camPt;\n    vUv = uv;\n}\n";
 
 FORGE.ShaderChunk["wts_vert_rectilinear"] = wts_vert_rectilinear;
 
-var wts_vert_rectilinear_wireframe = "\n#include <defines>\n#include <vert_attributes_wireframe>\n#include <uniforms>\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    gl_Position = projectionMatrix * camPt;\n    vQuadrilateralCoords = quadrilateralCoords;\n}\n";
+var wts_vert_rectilinear_equirectangular = "\n#include <defines>\n#include <vert_attributes>\n#include <uniforms>\nuniform float tViewportResolutionRatio;\nvarying vec3 vWorldPosition;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    gl_Position = projectionMatrix * camPt;\n    vWorldPosition = vec3( position );\n}\n";
+
+FORGE.ShaderChunk["wts_vert_rectilinear_equirectangular"] = wts_vert_rectilinear_equirectangular;
+
+var wts_vert_rectilinear_wireframe = "\n#include <defines>\n#include <vert_attributes_wireframe>\n#include <uniforms>\nuniform float tViewportResolutionRatio;\nvarying vec2 vUv;\nvarying vec2 vQuadrilateralCoords;\nvoid main() {\n    vec4 camPt = modelViewMatrix * vec4( position, 1.0 );\n    gl_Position = projectionMatrix * camPt;\n    vUv = uv;\n    vQuadrilateralCoords = quadrilateralCoords;\n}\n";
 
 FORGE.ShaderChunk["wts_vert_rectilinear_wireframe"] = wts_vert_rectilinear_wireframe;
 
@@ -12517,6 +12189,7 @@ FORGE.ShaderLib = {
             /** @type {FORGEUniform} */
             uniforms:
             {
+                tOpacity: { type: "f", value: 1.0 },
                 tTexture: { type: "t", value: null },
                 tViewportResolution: { type: "v2", value: new THREE.Vector2() },
                 tViewportResolutionRatio: { type: "f", value: 1.0 },
@@ -12534,6 +12207,7 @@ FORGE.ShaderLib = {
             uniforms:
             {
                 tTexture: { type: "t", value: null },
+                tTextureSize: { type: "v2", value: new THREE.Vector2() },
                 tTextureRatio: { type: "f", value: 1.0 },
                 tViewportResolution: { type: "v2", value: new THREE.Vector2() },
                 tViewportResolutionRatio: { type: "f", value: 1.0 },
@@ -12553,6 +12227,7 @@ FORGE.ShaderLib = {
             /** @type {FORGEUniform} */
             uniforms:
             {
+                tOpacity: { type: "f", value: 1.0 },
                 tTexture: { type: "t", value: null },
                 tViewportResolution: { type: "v2", value: new THREE.Vector2() },
                 tViewportResolutionRatio: { type: "f", value: 1.0 },
@@ -12576,7 +12251,8 @@ FORGE.ShaderLib = {
                 uniforms:
                 {
                     tOpacity: { type: "f", value: 1.0 },
-                    tTexture: { type: "t", value: null }
+                    tTexture: { type: "t", value: null },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_rectilinear,
                 fragmentShader: FORGE.ShaderChunk.wts_frag
@@ -12588,10 +12264,26 @@ FORGE.ShaderLib = {
                 uniforms:
                 {
                     tColor: { type: "c", value: null },
+                    tProjectionScale: { type: "f", value: 1 },
                     tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_rectilinear_wireframe,
                 fragmentShader: FORGE.ShaderChunk.wts_frag_wireframe
+            },
+
+            equirectangular:
+            {
+                /** @type {FORGEUniform} */
+                uniforms:
+                {
+                    tOpacity: { type: "f", value: 1.0 },
+                    tTexture: { type: "t", value: null },
+                    tProjectionScale: { type: "f", value: 1 },
+                    tViewportResolutionRatio: { type: "f", value: 1.0 },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
+                },
+                vertexShader: FORGE.ShaderChunk.wts_vert_rectilinear_equirectangular,
+                fragmentShader: FORGE.ShaderChunk.wts_frag_equirectangular
             }
         },
 
@@ -12603,7 +12295,8 @@ FORGE.ShaderLib = {
                 uniforms:
                 {
                     tOpacity: { type: "f", value: 1.0 },
-                    tTexture: { type: "t", value: null }
+                    tTexture: { type: "t", value: null },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_rectilinear,
                 fragmentShader: FORGE.ShaderChunk.wts_frag
@@ -12615,10 +12308,29 @@ FORGE.ShaderLib = {
                 uniforms:
                 {
                     tColor: { type: "c", value: null },
+                    tProjectionScale: { type: "f", value: 1 },
                     tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_rectilinear_wireframe,
                 fragmentShader: FORGE.ShaderChunk.wts_frag_wireframe
+            }
+        },
+
+        littlePlanet:
+        {
+            equirectangular:
+            {
+                /** @type {FORGEUniform} */
+                uniforms:
+                {
+                    tOpacity: { type: "f", value: 1.0 },
+                    tTexture: { type: "t", value: null },
+                    tProjectionScale: { type: "f", value: 1 },
+                    tViewportResolutionRatio: { type: "f", value: 1.0 },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
+                },
+                vertexShader: FORGE.ShaderChunk.wts_vert_littleplanet_equirectangular,
+                fragmentShader: FORGE.ShaderChunk.wts_frag_equirectangular
             }
         },
 
@@ -12631,7 +12343,9 @@ FORGE.ShaderLib = {
                 {
                     tOpacity: { type: "f", value: 1.0 },
                     tTexture: { type: "t", value: null },
-                    tProjectionDistance: { type: "f", value: 1 }
+                    tProjectionScale: { type: "f", value: 1 },
+                    tProjectionDistance: { type: "f", value: 1 },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_gopro,
                 fragmentShader: FORGE.ShaderChunk.wts_frag
@@ -12643,10 +12357,28 @@ FORGE.ShaderLib = {
                 uniforms:
                 {
                     tColor: { type: "c", value: null },
-                    tProjectionDistance: { type: "f", value: 1 }
+                    tProjectionScale: { type: "f", value: 1 },
+                    tProjectionDistance: { type: "f", value: 1 },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
                 },
                 vertexShader: FORGE.ShaderChunk.wts_vert_gopro_wireframe,
                 fragmentShader: FORGE.ShaderChunk.wts_frag_wireframe
+            },
+
+            equirectangular:
+            {
+                /** @type {FORGEUniform} */
+                uniforms:
+                {
+                    tOpacity: { type: "f", value: 1.0 },
+                    tTexture: { type: "t", value: null },
+                    tProjectionScale: { type: "f", value: 1 },
+                    tProjectionDistance: { type: "f", value: 1 },
+                    tViewportResolutionRatio: { type: "f", value: 1.0 },
+                    tModelViewMatrixInverse: { type: "m4", value: null }
+                },
+                vertexShader: FORGE.ShaderChunk.wts_vert_gopro_equirectangular,
+                fragmentShader: FORGE.ShaderChunk.wts_frag_equirectangular
             }
         }
     }
@@ -12843,33 +12575,6 @@ FORGE.ViewManager.prototype.disableVR = function()
 };
 
 /**
- * Convert a point from world space to screen space with the current view type.
- *
- * @method FORGE.ViewManager#worldToScreen
- * @param {THREE.Vector3} worldPt - Point in world space
- * @param {number} parallax - Parallax factor [0..1]
- * @return {THREE.Vector2} Point in screen coordinates
- * @todo Implement worldToScreen
- */
-FORGE.ViewManager.prototype.worldToScreen = function(worldPt, parallax)
-{
-    return this._view.worldToScreen(worldPt, parallax);
-};
-
-/**
- * Convert a point from screen space to world space with the current view type.
- *
- * @method FORGE.ViewManager#screenToWorld
- * @param {THREE.Vector2} screenPt point in screen space
- * @return {THREE.Vector3}
- * @todo Implement screenToWorld
- */
-FORGE.ViewManager.prototype.screenToWorld = function(screenPt)
-{
-    return this._view.screenToWorld(screenPt);
-};
-
-/**
  * Destroy sequence
  * @method FORGE.ViewManager#destroy
  */
@@ -12877,11 +12582,8 @@ FORGE.ViewManager.prototype.destroy = function()
 {
     this._viewer = null;
 
-    if (this._view !== null)
-    {
-        this._view.destroy();
-        this._view = null;
-    }
+    this._view.destroy();
+    this._view = null;
 
     if (this._onChange !== null)
     {
@@ -13138,9 +12840,9 @@ FORGE.ViewBase.prototype._boot = function()
 FORGE.ViewBase.prototype._screenToFragment = function(screenPt)
 {
     var resolution = this._viewer.renderer.displayResolution;
-    var fx = (2.0 * screenPt.x / resolution.width) - 1.0;
-    var fy = (2.0 * screenPt.y / resolution.height) - 1.0;
-    return new THREE.Vector2(fx * resolution.ratio, fy);
+    var fx = 2.0 * (screenPt.x / resolution.width - 1.0) * resolution.ratio;
+    var fy = 2.0 * (screenPt.y / resolution.height - 1.0) * resolution.ratio;
+    return new THREE.Vector2(fx, fy);
 };
 
 /**
@@ -13154,9 +12856,9 @@ FORGE.ViewBase.prototype._screenToFragment = function(screenPt)
 FORGE.ViewBase.prototype._fragmentToScreen = function(fragment)
 {
     var resolution = this._viewer.renderer.displayResolution;
-    var sx = ((fragment.x / resolution.ratio) + 1.0) * (resolution.width / 2.0);
-    var sy = (fragment.y + 1.0) * (resolution.height / 2.0);
-    return new THREE.Vector2(Math.round(sx), resolution.height - Math.round(sy));
+    fragment.x = ((fragment.x / resolution.ratio) + 1) * (resolution.width / 2);
+    fragment.y = ((fragment.y / resolution.ratio) + 1) * (resolution.height / 2);
+    return new THREE.Vector2(Math.round(fragment.x), resolution.height - Math.round(fragment.y));
 };
 
 /**
@@ -13179,7 +12881,7 @@ FORGE.ViewBase.prototype.updateUniforms = function(uniforms)
  * @method FORGE.ViewBase#worldToScreen
  * @param {THREE.Vector3} worldPt - Point in world space
  * @param {number} parallax - Parallax factor [0..1]
- * @return {?THREE.Vector2} Point in screen coordinates or null if the point is out of bounds.
+ * @return {THREE.Vector2} Point in screen coordinates
  * @todo Implement worldToScreen
  */
 FORGE.ViewBase.prototype.worldToScreen = function(worldPt, parallax)
@@ -13194,7 +12896,7 @@ FORGE.ViewBase.prototype.worldToScreen = function(worldPt, parallax)
  * Abstract method that should be implemented by subclass.
  * @method FORGE.ViewBase#screenToWorld
  * @param {THREE.Vector2} screenPt point in screen space
- * @return {?THREE.Vector3} Point in world space or null if the screenPt is out of bounds.
+ * @return {THREE.Vector3}
  * @todo Implement screenToWorld
  */
 FORGE.ViewBase.prototype.screenToWorld = function(screenPt)
@@ -13719,89 +13421,6 @@ FORGE.ViewGoPro.prototype.updateUniforms = function(uniforms)
 };
 
 /**
- * Convert a point from world space to screen space.
- *
- * @method FORGE.ViewGoPro#worldToScreen
- * @param {THREE.Vector3} worldPt - 3D point in world space
- * @param {number} parallaxFactor - parallax factor [0..1]
- * @return {?THREE.Vector2} point in screen coordinates
- */
-FORGE.ViewGoPro.prototype.worldToScreen = function(worldPt, parallaxFactor)
-{
-    worldPt = worldPt || new THREE.Vector3();
-    worldPt.normalize();
-    parallaxFactor = parallaxFactor || 0;
-
-    var worldPt4 = new THREE.Vector4(-worldPt.x, -worldPt.y, worldPt.z, 1.0);
-    var camEuler = FORGE.Math.rotationMatrixToEuler(this._viewer.camera.modelView);
-    var rotation = FORGE.Math.eulerToRotationMatrix(camEuler.yaw, camEuler.pitch, -camEuler.roll, true);
-    rotation = rotation.transpose();
-    worldPt4.applyMatrix4(rotation);
-
-    if (worldPt4.z > this._projectionDistance)
-    {
-        return null;
-    }
-
-    var alpha = (this._projectionDistance + 1) / (this._projectionDistance - worldPt4.z);
-    var x = -worldPt4.x * alpha;
-    var y = -worldPt4.y * alpha;
-
-    x /= (1 + parallaxFactor) * this._projectionScale;
-    y /= this._projectionScale;
-
-    return this._fragmentToScreen(new THREE.Vector2(x, y));
-};
-
-/**
- * Convert a point from screen space to world space.
- *
- * @method FORGE.ViewGoPro#screenToWorld
- * @param {THREE.Vector2} screenPt - 2D point in screen space [0..w, 0..h]
- * @return {?THREE.Vector3} world point
- */
-FORGE.ViewGoPro.prototype.screenToWorld = function(screenPt)
-{
-    var resolution = this._viewer.renderer.displayResolution;
-
-    screenPt = screenPt || new THREE.Vector2(resolution.width / 2, resolution.height / 2);
-
-    var widthMargin = FORGE.ViewRectilinear.OFF_SCREEN_MARGIN * resolution.width,
-        heightMargin = FORGE.ViewRectilinear.OFF_SCREEN_MARGIN * resolution.height;
-    if (screenPt.x < -widthMargin || screenPt.x > resolution.width + widthMargin
-        || screenPt.y < -heightMargin || screenPt.y > resolution.height + heightMargin)
-    {
-        return null;
-    }
-
-    var fragment = this._screenToFragment(screenPt);
-    fragment.multiplyScalar(this._projectionScale);
-
-    var xy2 = fragment.dot(fragment);
-    var zs12 = Math.pow(this._projectionDistance + 1, 2);
-    var delta = 4 * (this._projectionDistance * this._projectionDistance * xy2 * xy2
-                    - (xy2 + zs12) * (xy2 * this._projectionDistance * this._projectionDistance - zs12));
-
-    if (delta < 0)
-    {
-        return null;
-    }
-
-    // world coordinates
-    var worldPt = new THREE.Vector4();
-    worldPt.z = (2 * this._projectionDistance * xy2 - Math.sqrt(delta)) / (2 * (zs12 + xy2));
-    worldPt.x = fragment.x * ((this._projectionDistance - worldPt.z) / (this._projectionDistance + 1));
-    worldPt.y = fragment.y * ((this._projectionDistance - worldPt.z) / (this._projectionDistance + 1));
-
-    // move the point in the world system
-    var camEuler = FORGE.Math.rotationMatrixToEuler(this._viewer.camera.modelView);
-    var rotation = FORGE.Math.eulerToRotationMatrix(-camEuler.yaw, camEuler.pitch, -camEuler.roll, true);
-    worldPt.applyMatrix4(rotation);
-
-    return new THREE.Vector3(worldPt.x, -worldPt.y, worldPt.z).normalize();
-};
-
-/**
  * Get fov computed for projection.
  * @method FORGE.ViewGoPro#getProjectionFov
  */
@@ -13846,12 +13465,6 @@ FORGE.ViewRectilinear = function(viewer)
 
 FORGE.ViewRectilinear.prototype = Object.create(FORGE.ViewBase.prototype);
 FORGE.ViewRectilinear.prototype.constructor = FORGE.ViewRectilinear;
-
-/**
- * Screen margin allowed for semi off screen elements (percentage)
- * @type {number}
- */
-FORGE.ViewRectilinear.OFF_SCREEN_MARGIN = 0.5;
 
 /**
  * Boot sequence.
@@ -13912,27 +13525,27 @@ FORGE.ViewRectilinear.prototype.updateUniforms = function(uniforms)
  * @method FORGE.ViewRectilinear#worldToScreen
  * @param {THREE.Vector3} worldPt - 3D point in world space
  * @param {number} parallaxFactor - parallax factor [0..1]
- * @return {?THREE.Vector2} point in screen coordinates
+ * @return {THREE.Vector2} point in screen coordinates
  */
 FORGE.ViewRectilinear.prototype.worldToScreen = function(worldPt, parallaxFactor)
 {
-    worldPt = worldPt || new THREE.Vector3();
-    worldPt.normalize();
     parallaxFactor = parallaxFactor || 0;
 
     // Get point projected on unit sphere and apply camera rotation
-    var worldPt4 = new THREE.Vector4(worldPt.x, worldPt.y, -worldPt.z, 1.0);
+    var worldPt4 = new THREE.Vector4(worldPt.x, worldPt.y, worldPt.z, 1.0);
+
+    // Apply reversed rotation
     var camEuler = FORGE.Math.rotationMatrixToEuler(this._viewer.camera.modelView);
-    var rotation = FORGE.Math.eulerToRotationMatrix(camEuler.yaw, camEuler.pitch, -camEuler.roll, true);
+    var rotation = FORGE.Math.eulerToRotationMatrix(camEuler.yaw, camEuler.pitch, camEuler.roll, true);
     rotation = rotation.transpose();
     worldPt4.applyMatrix4(rotation);
 
     if (worldPt4.z < 0)
     {
-        return null;
+        return new THREE.Vector2(Infinity, Infinity);
     }
 
-    // Project on zn plane by dividing x,y components by z
+    // Project on zn plane by dividing x,y components by -z
     var projScale = Math.max(Number.EPSILON, worldPt4.z);
     var znPt = new THREE.Vector2(worldPt4.x, worldPt4.y).divideScalar(projScale);
 
@@ -13949,36 +13562,18 @@ FORGE.ViewRectilinear.prototype.worldToScreen = function(worldPt, parallaxFactor
  *
  * @method FORGE.ViewRectilinear#screenToWorld
  * @param {THREE.Vector2} screenPt - 2D point in screen space [0..w, 0..h]
- * @return {?THREE.Vector3} world point
+ * @return {THREE.Vector3} world point
  */
 FORGE.ViewRectilinear.prototype.screenToWorld = function(screenPt)
 {
-    var resolution = this._viewer.renderer.displayResolution;
-
-    screenPt = screenPt || new THREE.Vector2(resolution.width / 2, resolution.height / 2);
-
-    var widthMargin = FORGE.ViewRectilinear.OFF_SCREEN_MARGIN * resolution.width,
-        heightMargin = FORGE.ViewRectilinear.OFF_SCREEN_MARGIN * resolution.height;
-    if (screenPt.x < -widthMargin || screenPt.x > resolution.width + widthMargin
-        || screenPt.y < -heightMargin || screenPt.y > resolution.height + heightMargin)
-    {
-        return null;
-    }
-
-    // move the point in a -1..1 square
     var fragment = this._screenToFragment(screenPt);
-
-    // scale it (see _updateViewParams above)
     fragment.multiplyScalar(this._projectionScale);
 
-    var worldPt = new THREE.Vector4(fragment.x, fragment.y, -1, 0);
+    var cameraPt = new THREE.Vector4(fragment.x, fragment.y, -1, 0);
 
-    // move the point in the world system
-    var camEuler = FORGE.Math.rotationMatrixToEuler(this._viewer.camera.modelView);
-    var rotation = FORGE.Math.eulerToRotationMatrix(-camEuler.yaw, camEuler.pitch, -camEuler.roll, true);
-    worldPt.applyMatrix4(rotation);
+    var worldPt = cameraPt.applyMatrix4(this._viewer.camera.modelViewInverse).normalize();
 
-    return new THREE.Vector3(worldPt.x, -worldPt.y, worldPt.z).normalize();
+    return new THREE.Vector3(worldPt.x, worldPt.y, worldPt.z);
 };
 
 /**
@@ -16444,8 +16039,12 @@ FORGE.Raycaster.prototype.stop = function()
  */
 FORGE.Raycaster.prototype._canvasPointerClickHandler = function(event)
 {
-    var position = FORGE.Pointer.getRelativeMousePosition(event.data);
-    this._raycast("click", position);
+    event.data.center = event.data.center ||
+    {
+        x: event.data.clientX,
+        y: event.data.clientY
+    };
+    this._raycast("click", event.data.center);
 };
 
 /**
@@ -16456,8 +16055,12 @@ FORGE.Raycaster.prototype._canvasPointerClickHandler = function(event)
  */
 FORGE.Raycaster.prototype._canvasPointerMoveHandler = function(event)
 {
-    var position = FORGE.Pointer.getRelativeMousePosition(event.data);
-    this._raycast("move", position);
+    event.data.center = event.data.center ||
+    {
+        x: event.data.clientX,
+        y: event.data.clientY
+    };
+    this._raycast("move", event.data.center);
 };
 
 /**
@@ -16474,7 +16077,7 @@ FORGE.Raycaster.prototype._cameraChangeHandler = function()
  * Raycasting internal method
  * @method FORGE.Raycaster#_raycast
  * @param {string} event - triggering event
- * @param {THREE.Vector2=} screenPoint - raycasting point in screen coordinates, if no screen point defined, it will raycast in the center of the view.
+ * @param {Object=} screenPoint - raycasting point in screen coordinates, if no screen point defined, it will raycast in the center of the view.
  * @private
  */
 FORGE.Raycaster.prototype._raycast = function(event, screenPoint)
@@ -16487,7 +16090,11 @@ FORGE.Raycaster.prototype._raycast = function(event, screenPoint)
 
     var resolution = this._viewer.renderer.canvasResolution;
 
-    screenPoint = screenPoint || new THREE.Vector2(resolution.width / 2, resolution.height / 2);
+    screenPoint = screenPoint ||
+    {
+        x: resolution.width / 2,
+        y: resolution.height / 2
+    };
 
     var camera = this._viewer.renderer.camera;
     var ndc = new THREE.Vector2(screenPoint.x / resolution.width, 1.0 - screenPoint.y / resolution.height).multiplyScalar(2).addScalar(-1);
@@ -16870,19 +16477,18 @@ FORGE.PickingDrawPass.prototype._getObjectAtXnYn = function(xn, yn)
  */
 FORGE.PickingDrawPass.prototype._getObjectUnderPointerEvent = function(event)
 {
-    var e = event.data;
-    var position = FORGE.Pointer.getRelativeMousePosition(e);
-    var xn = position.x / event.data.target.width;
-    var yn = 1 - position.y / event.data.target.height;
+    event.data.center = event.data.center || {x:event.data.x, y:event.data.y};
+    var xn = event.data.center.x / event.data.target.width;
+    var yn = 1 - event.data.center.y / event.data.target.height;
     return this._getObjectAtXnYn(xn, yn);
 };
 
 /**
  * Pointer click handler
- * @method FORGE.PickingDrawPass#_canvasPointerClickHandler
+ * @method FORGE.PickingDrawPass#_onPointerClick
  * @private
  */
-FORGE.PickingDrawPass.prototype._canvasPointerClickHandler = function(event)
+FORGE.PickingDrawPass.prototype._onPointerClick = function(event)
 {
     var object = this._getObjectUnderPointerEvent(event);
 
@@ -16896,10 +16502,10 @@ FORGE.PickingDrawPass.prototype._canvasPointerClickHandler = function(event)
 
 /**
  * Pointer move handler
- * @method FORGE.PickingDrawPass#_canvasPointerMoveHandler
+ * @method FORGE.PickingDrawPass#_onPointerMove
  * @private
  */
-FORGE.PickingDrawPass.prototype._canvasPointerMoveHandler = function(event)
+FORGE.PickingDrawPass.prototype._onPointerMove = function(event)
 {
     var object = this._getObjectUnderPointerEvent(event);
 
@@ -16937,14 +16543,14 @@ FORGE.PickingDrawPass.prototype.start = function()
 {
     this._viewer.canvas.pointer.enabled = true;
 
-    if (this._viewer.canvas.pointer.onClick.has(this._canvasPointerClickHandler, this) === false)
+    if (this._viewer.canvas.pointer.onClick.has(this._onPointerClick, this) === false)
     {
-        this._viewer.canvas.pointer.onClick.add(this._canvasPointerClickHandler, this);
+        this._viewer.canvas.pointer.onClick.add(this._onPointerClick, this);
     }
 
-    if (this._viewer.canvas.pointer.onMove.has(this._canvasPointerMoveHandler, this) === false)
+    if (this._viewer.canvas.pointer.onMove.has(this._onPointerMove, this) === false)
     {
-        this._viewer.canvas.pointer.onMove.add(this._canvasPointerMoveHandler, this);
+        this._viewer.canvas.pointer.onMove.add(this._onPointerMove, this);
     }
 };
 
@@ -16954,14 +16560,14 @@ FORGE.PickingDrawPass.prototype.start = function()
  */
 FORGE.PickingDrawPass.prototype.stop = function()
 {
-    if (this._viewer.canvas.pointer.onClick.has(this._canvasPointerClickHandler, this))
+    if (this._viewer.canvas.pointer.onClick.has(this._onPointerClick, this))
     {
-        this._viewer.canvas.pointer.onClick.remove(this._canvasPointerClickHandler, this);
+        this._viewer.canvas.pointer.onClick.remove(this._onPointerClick, this);
     }
 
-    if (this._viewer.canvas.pointer.onMove.has(this._canvasPointerMoveHandler, this))
+    if (this._viewer.canvas.pointer.onMove.has(this._onPointerMove, this))
     {
-        this._viewer.canvas.pointer.onMove.remove(this._canvasPointerMoveHandler, this);
+        this._viewer.canvas.pointer.onMove.remove(this._onPointerMove, this);
     }
 };
 
@@ -16971,7 +16577,7 @@ FORGE.PickingDrawPass.prototype.stop = function()
  */
 FORGE.PickingDrawPass.prototype.click = function()
 {
-    if(this._hoveredObject !== null && this._viewer.canvas.pointer.onClick.has(this._canvasPointerClickHandler, this))
+    if(this._hoveredObject !== null && this._viewer.canvas.pointer.onClick.has(this._onPointerClick, this))
     {
         this._hoveredObject.click();
     }
@@ -17397,7 +17003,7 @@ FORGE.HotspotManager = function(viewer)
     /**
      * Hotspots array
      * @name  FORGE.HotspotManager#_hotspots
-     * @type {Array<(FORGE.Hotspot3D|FORGE.HotspotDOM)>}
+     * @type {Array<FORGE.Hotspot3D>}
      * @private
      */
     this._hotspots = [];
@@ -17419,17 +17025,17 @@ FORGE.HotspotManager.prototype._parseConfig = function(config)
 {
     for (var i = 0, ii = config.length; i < ii; i++)
     {
-        this.create(config[i]);
+        this._createHotspot(config[i]);
     }
 };
 
 /**
  * Create a hotspot from a hotpsot config object.
- * @method FORGE.HotspotManager#create
+ * @method FORGE.HotspotManager#_createHotspot
+ * @private
  * @param {HotspotConfig} config - The config of the hotspot you want to create.
- * @return {(FORGE.Hotspot3D|FORGE.HotspotDOM|boolean)} Returns the hotspot if the hotspot is created, false if not.
  */
-FORGE.HotspotManager.prototype.create = function(config)
+FORGE.HotspotManager.prototype._createHotspot = function(config)
 {
     var hotspot = null;
     var type = config.type || FORGE.HotspotType.THREE_DIMENSIONAL; //3d is the default type
@@ -17439,38 +17045,11 @@ FORGE.HotspotManager.prototype.create = function(config)
         case FORGE.HotspotType.THREE_DIMENSIONAL:
             hotspot = new FORGE.Hotspot3D(this._viewer, config);
             break;
-
-        case FORGE.HotspotType.DOM:
-            hotspot = new FORGE.HotspotDOM(this._viewer, config);
-            break;
     }
 
     if (hotspot !== null)
     {
         this._hotspots.push(hotspot);
-        return hotspot;
-    }
-
-    return false;
-};
-
-/**
- * Remove a hotspot from the manager
- * @method FORGE.HotspotManager#remove
- * @param  {(string|FORGE.Hotspot3D)} hotspot - the hotspot or its uid to remove
- */
-FORGE.HotspotManager.prototype.remove = function(hotspot)
-{
-    if(FORGE.Utils.isTypeOf(hotspot, "string") === true)
-    {
-        hotspot = FORGE.UID.get(hotspot);
-    }
-
-    if(FORGE.Utils.isTypeOf(hotspot, "Hotspot3D") === true)
-    {
-        var index = this._hotspots.indexOf(hotspot);
-        this._hotspots.splice(index, 1);
-        hotspot.destroy();
     }
 };
 
@@ -17551,7 +17130,7 @@ FORGE.HotspotManager.prototype.boot = function()
  * Get hotspots by type
  * @method  FORGE.HotspotManager#getByType
  * @param  {string} type - The type of hotspots you want to get.
- * @return {Array<(FORGE.Hotspot3D|FORGE.HotspotDOM)>}
+ * @return {Array<FORGE.Hotspot3D>}
  */
 FORGE.HotspotManager.prototype.getByType = function(type)
 {
@@ -17601,38 +17180,15 @@ FORGE.HotspotManager.prototype.update = function()
 /**
  * Clear all hotspots from the manager
  * @method FORGE.HotspotManager#clear
- * @param {string=} type - the type of hotspots to clear, nothing for all
  */
-FORGE.HotspotManager.prototype.clear = function(type)
+FORGE.HotspotManager.prototype.clear = function()
 {
-    this._hotspots = this._hotspots.filter(function(hs)
+    var count = this._hotspots.length;
+    while (count--)
     {
-        var keep = (typeof type === "string" && hs.type !== type);
-
-        if (keep === false)
-        {
-            hs.destroy();
-        }
-
-        return keep;
-    });
-};
-
-/**
- * Dump the array of hotspot configurations.
- * @method FORGE.HotspotManager#dump
- * @return {Array<HotspotConfig>} Return an array of hotspot configurations of the current scene.
- */
-FORGE.HotspotManager.prototype.dump = function()
-{
-    var dump = [];
-
-    for(var i = 0, ii = this._hotspots.length; i < ii; i++)
-    {
-        dump.push(this._hotspots[i].dump());
+        var hs = this._hotspots.pop();
+        hs.destroy();
     }
-
-    return dump;
 };
 
 /**
@@ -17653,7 +17209,7 @@ FORGE.HotspotManager.prototype.destroy = function()
  * Get all the hotspots.
  * @name FORGE.HotspotManager#all
  * @readonly
- * @type {Array<(FORGE.Hotspot3D|FORGE.HotspotDOM)>}
+ * @type {Array<FORGE.Hotspot3D>}
  */
 Object.defineProperty(FORGE.HotspotManager.prototype, "all",
 {
@@ -17661,28 +17217,6 @@ Object.defineProperty(FORGE.HotspotManager.prototype, "all",
     get: function()
     {
         return this._hotspots;
-    }
-});
-
-/**
- * Get all the hotspots uids.
- * @name FORGE.HotspotManager#uids
- * @readonly
- * @type {Array<string>}
- */
-Object.defineProperty(FORGE.HotspotManager.prototype, "uids",
-{
-    /** @this {FORGE.HotspotManager} */
-    get: function()
-    {
-        var uids = [];
-
-        for(var i = 0, ii = this._hotspots.length; i < ii; i++)
-        {
-            uids.push(this._hotspots[i].uid);
-        }
-
-        return uids;
     }
 });
 
@@ -17698,473 +17232,6 @@ Object.defineProperty(FORGE.HotspotManager.prototype, "count",
     get: function()
     {
         return this._hotspots.length;
-    }
-});
-
-/**
- * A HotspotDOM, to be displayed like a billboard. This hotspot provides a
- * single div positioned at the right position in the scene, without any
- * content in it and any deformation. It is up to the FORGE user to specify
- * those. Two things can be tweaked here: the displayObject property of this
- * hotspot, which is a {@link FORGE.DisplayObjectContainer}, and the DOM part
- * of this container, accessible through `displayObject.dom` or more directly
- * using the `dom` property on the object HotspotDOM.
- *
- * @constructor FORGE.HotspotDOM
- * @param {FORGE.Viewer} viewer - viewer reference
- * @param {HotspotConfig} config - hotspot configuration
- * @extends {FORGE.BaseObject}
- *
- * @todo facingCenter with CSS 3D, rotation values and scale values
- */
-FORGE.HotspotDOM = function(viewer, config)
-{
-    /**
-     * The viewer reference
-     * @name FORGE.HotspotDOM#_viewer
-     * @type {FORGE.Viewer}
-     * @private
-     */
-    this._viewer = viewer;
-
-    /**
-     * Hotspot configuration
-     * @name FORGE.HotspotDOM#_config
-     * @type {HotspotConfig}
-     * @private
-     */
-    this._config = config;
-
-    /**
-     * HotspotTransform object for the positioning and scaling (no rotation)
-     * @name  FORGE.Hotspot3D#_transform
-     * @type {FORGE.HotspotTransform}
-     * @private
-     */
-    this._transform = null;
-
-    /**
-     * The HTML element composing the hotspot
-     * @name FORGE.HotspotDOM#_dom
-     * @type {Element|HTMLElement}
-     * @private
-     */
-    this._dom = null;
-
-    /**
-     * Events object that will keep references of the ActionEventDispatcher
-     * @name FORGE.HotspotDOM#_events
-     * @type {Object<FORGE.ActionEventDispatcher>}
-     * @private
-     */
-    this._events = null;
-
-    /**
-     * Visibility flag
-     * @name  FORGE.HotspotDOM#_visible
-     * @type {boolean}
-     * @private
-     */
-    this._visible = true;
-
-    /**
-     * Is this object is interactive / raycastable
-     * @name FORGE.HotspotDOM#_interactive
-     * @type {boolean}
-     * @private
-     */
-    this._interactive = true;
-
-    /**
-     * Does the hotspot is facing the camera ? Useful for a flat hotspot we want
-     * to always be facing to the camera.
-     * @name FORGE.HotspotDOM#_facingCenter
-     * @type {boolean}
-     * @private
-     */
-    this._facingCenter = false;
-
-    /**
-     * The pointer cursor when pointer is over the hotspot zone
-     * @name FORGE.HotspotDOM#_cursor
-     * @type {string}
-     * @private
-     */
-    this._cursor = "pointer";
-
-    FORGE.BaseObject.call(this, "HotspotDOM");
-
-    this._boot();
-};
-
-FORGE.HotspotDOM.prototype = Object.create(FORGE.BaseObject.prototype);
-FORGE.HotspotDOM.prototype.constructor = FORGE.HotspotDOM;
-
-/**
- * @name FORGE.HotspotDOM.DEFAULT_CONFIG
- * @type {HotspotConfig}
- */
-FORGE.HotspotDOM.DEFAULT_CONFIG =
-{
-    dom:
-    {
-        id: "hostpot-dom",
-        width: 320,
-        height: 240,
-        color: "white",
-        index: 10
-    }
-};
-
-/**
- * Boot sequence.
- * @method FORGE.HotspotDOM#_boot
- * @private
- */
-FORGE.HotspotDOM.prototype._boot = function()
-{
-    this._transform = new FORGE.HotspotTransform();
-
-    this._events = {};
-
-    this._parseConfig(this._config);
-    this._register();
-
-    this._viewer.renderer.view.onChange.add(this._viewChangeHandler, this);
-};
-
-/**
- * Parse the config object
- * @method FORGE.HotspotDOM#_parseConfig
- * @param {HotspotConfig} config - the hotspot config to parse
- * @private
- */
-FORGE.HotspotDOM.prototype._parseConfig = function(config)
-{
-    config = /** @type {HotspotConfig} */ (FORGE.Utils.extendMultipleObjects(FORGE.HotspotDOM.DEFAULT_CONFIG, config));
-
-    this._uid = config.uid;
-
-    if (typeof config.events === "object" && config.events !== null)
-    {
-        this._createEvents(config.events);
-    }
-
-    var dom = config.dom;
-
-    if (dom !== null && typeof dom !== "undefined")
-    {
-        var id;
-
-        if (typeof dom.id === "string")
-        {
-            id = dom.id;
-        }
-        else
-        {
-            id = this._uid;
-        }
-
-        // get the already present hotspot in the dom, or create it
-        var div = document.getElementById(id);
-
-        if (div !== null)
-        {
-            this._dom = div;
-        }
-        else
-        {
-            this._dom = document.createElement("div");
-            this._dom.id = id;
-        }
-
-        this._dom.classList.add("hotspot-dom");
-        this._dom.style.position = "absolute";
-
-        if (typeof dom.class === "string")
-        {
-            this._dom.classList.add(dom.class);
-        }
-        else if (Array.isArray(dom.class) === true)
-        {
-            for (var i = 0, ii = dom.class.length; i < ii; i++)
-            {
-                this._dom.classList.add(dom.class[i]);
-            }
-        }
-
-        // basic CSS from json configuration
-        var rule = "." + this._dom.id + "-basic-class {";
-
-        if (typeof dom.width === "number")
-        {
-            rule += "width: " + dom.width + "px;";
-        }
-        else if (typeof dom.width === "string")
-        {
-            rule += "width: " + dom.width + ";";
-        }
-
-        if (typeof dom.height === "number")
-        {
-            rule += "height: " + dom.height + "px;";
-        }
-        else if (typeof dom.height === "string")
-        {
-            rule += "height: " + dom.height + ";";
-        }
-
-        if (typeof dom.color === "string")
-        {
-            rule += "background-color: " + dom.color + ";";
-        }
-
-        if (typeof dom.index === "number")
-        {
-            rule+= "z-index: " + dom.index + ";";
-        }
-
-        rule += "}";
-        this._viewer.domHotspotStyle.sheet.insertRule(rule, 0);
-        this._dom.classList.add(this._dom.id + "-basic-class");
-    }
-
-    this._dom.style.pointerEvents = "auto";
-    this._dom.addEventListener("click", this._domClickHandler.bind(this));
-    this._dom.addEventListener("mouseover", this._domOverHandler.bind(this));
-    this._dom.addEventListener("mouseout", this._domOutHandler.bind(this));
-
-    if (config.transform !== null && typeof config.transform !== "undefined")
-    {
-        this._transform.load(config.transform, false);
-    }
-
-    this._visible = (typeof config.visible === "boolean") ? config.visible : true;
-    // this._facingCenter = (typeof config.facingCenter === "boolean") ? config.facingCenter : false;
-    this._interactive = (typeof config.interactive === "boolean") ? config.interactive : true;
-    this._cursor = (typeof config.cursor === "string") ? config.cursor : "pointer";
-
-    this.show();
-};
-
-/**
- * DOM click handler
- * @method FORGE.HotspotDOM#_domClickHandler
- * @private
- */
-FORGE.HotspotDOM.prototype._domClickHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onClick, "ActionEventDispatcher") === true)
-    {
-        this._events.onClick.dispatch();
-    }
-};
-
-/**
- * DOM over handler
- * @method FORGE.HotspotDOM#_domOverHandler
- * @private
- */
-FORGE.HotspotDOM.prototype._domOverHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onOver, "ActionEventDispatcher") === true)
-    {
-        this._events.onOver.dispatch();
-    }
-
-    this._dom.style.cursor = this._cursor;
-};
-
-/**
- * DOM out handler
- * @method FORGE.HotspotDOM#_domOutHandler
- * @private
- */
-FORGE.HotspotDOM.prototype._domOutHandler = function()
-{
-    // Actions defined from the json
-    if(FORGE.Utils.isTypeOf(this._events.onOut, "ActionEventDispatcher") === true)
-    {
-        this._events.onOut.dispatch();
-    }
-
-    this._dom.style.cursor = "default";
-};
-
-/**
- * Create action events dispatchers.
- * @method FORGE.HotspotDOM#_createEvents
- * @private
- * @param {Object} events - The events config of the dom hotspot.
- */
-FORGE.HotspotDOM.prototype._createEvents = function(events)
-{
-    var event;
-    for(var e in events)
-    {
-        event = new FORGE.ActionEventDispatcher(this._viewer, e);
-        event.addActions(events[e]);
-        this._events[e] = event;
-    }
-};
-
-/**
- * Clear all object events.
- * @method FORGE.HotspotDOM#_clearEvents
- * @private
- */
-FORGE.HotspotDOM.prototype._clearEvents = function()
-{
-    for(var e in this._events)
-    {
-        this._events[e].destroy();
-        this._events[e] = null;
-    }
-};
-
-/**
- * Handles the changing view, as it can only be present in the Rectilinear and GoPro view.
- * @method FORGE.HotspotDOM#_viewChangeHandler
- * @private
- */
-FORGE.HotspotDOM.prototype._viewChangeHandler = function()
-{
-    this._dom.style.display = "block";
-
-    if ((this._viewer.view.type !== FORGE.ViewType.RECTILINEAR && this._viewer.view.type !== FORGE.ViewType.GOPRO) || this._visible === false)
-    {
-        this._dom.style.display = "none";
-    }
-};
-
-/**
- * Show the hotspot by appending it to the DOM container.
- * @method FORGE.HotspotDOM#show
- */
-FORGE.HotspotDOM.prototype.show = function()
-{
-    this._viewer.domHotspotContainer.dom.appendChild(this._dom);
-};
-
-/**
- * Hide the hotspot by removing it to the DOM container.
- * @method FORGE.HotspotDOM#hide
- */
-FORGE.HotspotDOM.prototype.hide = function()
-{
-    this._viewer.domHotspotContainer.dom.removeChild(this._dom, false);
-};
-
-/**
- * Update routine
- * @method FORGE.HotspotDOM#update
- */
-FORGE.HotspotDOM.prototype.update = function()
-{
-    // get the screen position of the hotspots
-    var position = this._viewer.view.worldToScreen(this._transform.position.values);
-
-    if (position !== null)
-    {
-        var x = position.x - this._dom.clientWidth / 2;
-        var y = position.y - this._dom.clientHeight / 2;
-        this._dom.style.left = x + "px";
-        this._dom.style.top = y + "px";
-    }
-    else
-    {
-        this._dom.style.left = "99999px";
-        this._dom.style.top = "99999px";
-    }
-};
-
-/**
- * Destroy routine
- * @method FORGE.HotspotDOM#destroy
- */
-FORGE.HotspotDOM.prototype.destroy = function()
-{
-    this._dom = null;
-
-    this._transform.destroy();
-    this._transform = null;
-
-    this._clearEvents();
-    this._events = null;
-
-    FORGE.BaseObject.prototype.destroy.call(this);
-};
-
-/**
- * Get the DOM content of the hotspot
- * @name FORGE.HotspotDOM#dom
- * @readonly
- * @type {?Element|HTMLElement}
- */
-Object.defineProperty(FORGE.HotspotDOM.prototype, "dom",
-{
-    /** @this {FORGE.HotspotDOM} */
-    get: function()
-    {
-        return this._dom;
-    }
-});
-
-/**
- * Get and set the visible flag
- * @name FORGE.HotspotDOM#visible
- * @type {boolean}
- */
-Object.defineProperty(FORGE.HotspotDOM.prototype, "visible",
-{
-    /** @this {FORGE.HotspotDOM} */
-    get: function()
-    {
-        return this._visible;
-    },
-    /** @this {FORGE.HotspotDOM} */
-    set: function(value)
-    {
-        this._visible = Boolean(value);
-
-        if (this._visible === true)
-        {
-            this._viewChangeHandler();
-        }
-        else
-        {
-            this._dom.style.display = "none";
-        }
-    }
-});
-
-/**
- * Get and set the interactive flag for the main hotspot DOM container
- * @name FORGE.HotspotDOM#interactive
- * @type {boolean}
- */
-Object.defineProperty(FORGE.HotspotDOM.prototype, "interactive",
-{
-    /** @this {FORGE.HotspotDOM} */
-    get: function()
-    {
-        return this._interactive;
-    },
-    /** @this {FORGE.HotspotDOM} */
-    set: function(value)
-    {
-        this._interactive = Boolean(value);
-
-        if (this._interactive === true)
-        {
-            this._dom.style.pointerEvents = "auto";
-        }
-        else
-        {
-            this._dom.style.pointerEvents = "none";
-        }
     }
 });
 /**
@@ -18201,14 +17268,6 @@ FORGE.Hotspot3D = function(viewer, config)
      * @private
      */
     this._transform = null;
-
-    /**
-     * HotspotGeometry object.
-     * @name FORGE.Hotspot3D#_geometry
-     * @type {FORGE.HotspotGeometry}
-     * @private
-     */
-    this._geometry = null;
 
     /**
      * Material object for the 3D object.
@@ -18332,7 +17391,6 @@ FORGE.Hotspot3D.prototype._parseConfig = function(config)
     this._interactive = (typeof config.interactive === "boolean") ? config.interactive : true;
     this._cursor = (typeof config.cursor === "string") ? config.cursor : "pointer";
 
-    this._geometry = new FORGE.HotspotGeometry();
     this._material = new FORGE.HotspotMaterial(this._viewer, this._uid);
     this._sound = new FORGE.HotspotSound(this._viewer, this._uid);
     this._states = new FORGE.HotspotStates(this._viewer, this._uid);
@@ -18341,6 +17399,8 @@ FORGE.Hotspot3D.prototype._parseConfig = function(config)
     {
         this._states.addConfig(config.states);
     }
+
+    this._createGeometry(config.geometry);
 
     if (typeof config.fx === "string" && config.fx !== "")
     {
@@ -18354,6 +17414,47 @@ FORGE.Hotspot3D.prototype._parseConfig = function(config)
 
     this._states.onLoadComplete.add(this._stateLoadCompleteHandler, this);
     this._states.load();
+};
+
+FORGE.Hotspot3D.prototype._createGeometry = function(config)
+{
+    this.log("create geometry");
+
+    if (typeof config !== "undefined" && typeof config.type === "string")
+    {
+        var options = config.options;
+
+        switch (config.type)
+        {
+            case FORGE.HotspotGeometryType.BOX:
+                this._mesh.geometry = FORGE.HotspotGeometry.BOX(options);
+                break;
+
+            case FORGE.HotspotGeometryType.SPHERE:
+                this._mesh.geometry = FORGE.HotspotGeometry.SPHERE(options);
+                break;
+
+            case FORGE.HotspotGeometryType.CYLINDER:
+                this._mesh.geometry = FORGE.HotspotGeometry.CYLINDER(options);
+                break;
+
+            case FORGE.HotspotGeometryType.PLANE:
+                this._mesh.geometry = FORGE.HotspotGeometry.PLANE(options);
+                break;
+
+            case FORGE.HotspotGeometryType.SHAPE:
+                this._mesh.geometry = FORGE.HotspotGeometry.SHAPE(options);
+                break;
+
+            default:
+                this._mesh.geometry = FORGE.HotspotGeometry.PLANE();
+                break;
+        }
+    }
+    else
+    {
+        this._mesh.geometry = FORGE.HotspotGeometry.PLANE();
+    }
 };
 
 /**
@@ -18407,7 +17508,6 @@ FORGE.Hotspot3D.prototype._stateLoadCompleteHandler = function()
 {
     this.log("state load complete handler");
 
-    this._mesh.geometry = this._geometry.geometry;
     this._mesh.material = this._material.material;
     this._mesh.visible = this._visible;
 
@@ -18545,31 +17645,6 @@ FORGE.Hotspot3D.prototype.update = function()
 };
 
 /**
- * Dump the hotspot actual configuration
- * @method FORGE.Hotspot3D#dump
- * @return {HotspotConfig} Return the hotspot actual configuration object
- */
-FORGE.Hotspot3D.prototype.dump = function()
-{
-    var dump =
-    {
-        uid: this._uid,
-        name: this._name,
-        tags: this._tags,
-        visible: this._visible,
-        interactive: this._interactive,
-        cursor: this._cursor,
-        fx: this._fx,
-        facingCenter: this._facingCenter,
-        geometry: this._geometry.dump(),
-        transform: this._transform.dump(),
-        material: this._material.dump()
-    };
-
-    return dump;
-};
-
-/**
  * Destroy routine
  * @method FORGE.Hotspot3D#destroy
  */
@@ -18590,12 +17665,6 @@ FORGE.Hotspot3D.prototype.destroy = function()
     {
         this._transform.destroy();
         this._transform = null;
-    }
-
-    if(this._geometry !== null)
-    {
-        this._geometry.destroy();
-        this._geometry = null;
     }
 
     if (this._animation !== null)
@@ -18637,6 +17706,7 @@ Object.defineProperty(FORGE.Hotspot3D.prototype, "config",
 /**
  * Hotspot name accessor
  * @name FORGE.Hotspot3D#name
+ * @readonly
  * @type {string}
  */
 Object.defineProperty(FORGE.Hotspot3D.prototype, "name",
@@ -18645,15 +17715,6 @@ Object.defineProperty(FORGE.Hotspot3D.prototype, "name",
     get: function()
     {
         return this._name;
-    },
-
-    /** @this {FORGE.Hotspot3D} */
-    set: function(value)
-    {
-        if(typeof value === "string")
-        {
-            this._name = value;
-        }
     }
 });
 
@@ -18714,21 +17775,6 @@ Object.defineProperty(FORGE.Hotspot3D.prototype, "transform",
     get: function()
     {
         return this._transform;
-    }
-});
-
-/**
- * Hotspot geometry accessor
- * @name FORGE.Hotspot3D#geometry
- * @readonly
- * @type {FORGE.HotspotGeometry}
- */
-Object.defineProperty(FORGE.Hotspot3D.prototype, "geometry",
-{
-    /** @this {FORGE.Hotspot3D} */
-    get: function()
-    {
-        return this._geometry;
     }
 });
 
@@ -18968,7 +18014,8 @@ FORGE.HotspotSound.prototype._setupSound = function()
     if(this._isSpatialized() === true)
     {
         // Create world position from inversed theta angle and phi angle
-        var positionWorld = FORGE.Math.sphericalToCartesian(1, /** @type {number} */ (this._position.theta), /** @type {number} */ (this._position.phi));
+        var sphericalPt = FORGE.Utils.toTHREESpherical(1, FORGE.Math.degToRad(/** @type {number} */ (-this._position.theta)), FORGE.Math.degToRad(/** @type {number} */ (this._position.phi))); //@todo manage radius here
+        var positionWorld = new THREE.Vector3().setFromSpherical(sphericalPt);
 
         this._sound.spatialized = this._isSpatialized();
         this._sound.x = positionWorld.x;
@@ -19738,21 +18785,21 @@ FORGE.HotspotMaterial.prototype._createShaderMaterial = function()
     var vertexShader = FORGE.ShaderLib.parseIncludes(shader.vertexShader);
     var fragmentShader = FORGE.ShaderLib.parseIncludes(shader.fragmentShader);
 
-    // side is FrontSide, except if the geometry is a PLANE
-    var type = FORGE.UID.get(this._hotspotUid).geometry.type;
-    var side = (type === FORGE.HotspotGeometryType.PLANE) ? THREE.DoubleSide : THREE.FrontSide;
-
     this._material = new THREE.RawShaderMaterial(
     {
         fragmentShader: fragmentShader,
         vertexShader: vertexShader,
         uniforms: /** @type {FORGEUniform} */ (shader.uniforms),
-        side: side,
+        side: THREE.DoubleSide,
         name: "HotspotMaterial"
     });
 
-    this._material.transparent = this._transparent;
-    this._material.needsUpdate = true;
+    if (this._texture !== null)
+    {
+        //Apply transparent parameter only if we have a texture.
+        this._material.transparent = this._transparent;
+        this._material.needsUpdate = true;
+    }
 };
 
 FORGE.HotspotMaterial.prototype.updateShader = function()
@@ -19813,43 +18860,6 @@ FORGE.HotspotMaterial.prototype.setTextureFrame = function(frame)
     this._texture.needsUpdate = true;
 
     this.update();
-};
-
-/**
- * Dump the material configuration
- * @method FORGE.HotspotMaterial#dump
- * @return {HotspotMaterialConfig}
- */
-FORGE.HotspotMaterial.prototype.dump = function()
-{
-    var dump =
-    {
-        color: this._color,
-        opacity: this._opacity,
-        transparent: this._transparent,
-        update: this._update
-    };
-
-    switch(this._type)
-    {
-        case FORGE.HotspotMaterial.types.IMAGE:
-            dump.image = this._config.image;
-            break;
-
-        case FORGE.HotspotMaterial.types.SPRITE:
-            dump.sprite = this._config.sprite;
-            break;
-
-        case FORGE.HotspotMaterial.types.VIDEO:
-            dump.video = this._config.video;
-            break;
-
-        case FORGE.HotspotMaterial.types.PLUGIN:
-            dump.plugin = this._config.plugin;
-            break;
-    }
-
-    return dump;
 };
 
 /**
@@ -20027,191 +19037,19 @@ Object.defineProperty(FORGE.HotspotMaterial.prototype, "onReady",
         return this._onReady;
     }
 });
-
 /**
- * Forge Hotspot Geometry
- * @constructor FORGE.HotspotGeometry
+ * Namespace to store all geometry methods.
+ * @name FORGE.HotspotGeometry
+ * @type {Object}
  */
-FORGE.HotspotGeometry = function()
-{
-    /**
-     * Geometry configuration
-     * @name FORGE.HotspotGeometry#_config
-     * @type {HotspotGeometryConfig}
-     * @private
-     */
-    this._config = FORGE.HotspotGeometry.DEFAULT_CONFIG;
-
-    /**
-     * The geometry type
-     * @name FORGE.HotspotGeometry#_type
-     * @type {string}
-     * @private
-     */
-    this._type = "";
-
-    /**
-     * The THREE geometry object
-     * @name FORGE.HotspotGeometry#_geometry
-     * @type {(THREE.Geometry|THREE.PlaneBufferGeometry|THREE.BoxBufferGeometry|THREE.SphereBufferGeometry|THREE.CylinderBufferGeometry|THREE.ShapeBufferGeometry)}
-     * @private
-     */
-    this._geometry = null;
-
-    /**
-     * Event dispatcher for the onLoadComplete
-     * @name FORGE.HotspotGeometry#_onLoadComplete
-     * @type {FORGE.EventDispatcher}
-     * @private
-     */
-    this._onLoadComplete = null;
-};
+FORGE.HotspotGeometry = {};
 
 /**
- * @name FORGE.HotspotGeometry.DEFAULT_CONFIG
- * @type {HotspotGeometryConfig}
- * @const
- */
-FORGE.HotspotGeometry.DEFAULT_CONFIG =
-{
-    type: "plane",
-
-    options:
-    {
-        width: 20,
-        height: 20,
-        widthSegments: 8,
-        heightSegments: 8
-    }
-};
-
-/**
- * Parse the hotspot geometry config
- * @method FORGE.HotspotGeometry#_parseConfig
- * @param {HotspotGeometryConfig} config
- */
-FORGE.HotspotGeometry.prototype._parseConfig = function(config)
-{
-    this._type = config.type;
-
-    var options = config.options;
-
-    switch (this._type)
-    {
-        case FORGE.HotspotGeometryType.PLANE:
-            this._geometry = this._createPlane(options);
-            break;
-
-        case FORGE.HotspotGeometryType.BOX:
-            this._geometry = this._createBox(options);
-            break;
-
-        case FORGE.HotspotGeometryType.SPHERE:
-            this._geometry = this._createSphere(options);
-            break;
-
-        case FORGE.HotspotGeometryType.CYLINDER:
-            this._geometry = this._createCylinder(options);
-            break;
-
-        case FORGE.HotspotGeometryType.SHAPE:
-            this._geometry = this._createShape(options);
-            break;
-
-        default:
-            this._geometry = this._createPlane(options);
-            break;
-    }
-};
-
-/**
- * @method FORGE.HotspotGeometry#_createPlane
- * @param {HotspotGeometryPlane=} options
- * @return {THREE.PlaneBufferGeometry}
- * @private
- */
-FORGE.HotspotGeometry.prototype._createPlane = function(options)
-{
-    options = options || {};
-
-    var width = options.width || 20;
-    var height = options.height || 20;
-    var widthSegments = options.widthSegments || 8;
-    var heightSegments = options.heightSegments || 8;
-
-    return new THREE.PlaneBufferGeometry(width, height, widthSegments, heightSegments);
-};
-
-/**
- * @method FORGE.HotspotGeometry#_createBox
- * @param {HotspotGeometryBox=} options
- * @return {THREE.BoxBufferGeometry}
- * @private
- */
-FORGE.HotspotGeometry.prototype._createBox = function(options)
-{
-    options = options || {};
-
-    var width = options.width || 20;
-    var height = options.height || 20;
-    var depth = options.depth || 20;
-    var widthSegments = options.widthSegments || 8;
-    var heightSegments = options.heightSegments || 8;
-    var depthSegments = options.depthSegments || 8;
-
-    return new THREE.BoxBufferGeometry(width, height, depth, widthSegments, heightSegments, depthSegments);
-};
-
-/**
- * @method FORGE.HotspotGeometry#_createSphere
- * @param {HotspotGeometrySphere=} options
- * @return {THREE.SphereBufferGeometry}
- * @private
- */
-FORGE.HotspotGeometry.prototype._createSphere = function(options)
-{
-    options = options || {};
-
-    var radius = options.radius || 10;
-    var widthSegments = options.widthSegments || 64;
-    var heightSegments = options.heightSegments || 64;
-    var phiStart = options.phiStart || 0;
-    var phiLength = options.phiLength || 2 * Math.PI;
-    var thetaStart = options.thetaStart || 0;
-    var thetaLength = options.thetaLength || 2 * Math.PI;
-
-    return new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength);
-};
-
-/**
- * @method FORGE.HotspotGeometry#_createCylinder
- * @param {HotspotGeometryCylinder=} options
- * @return {THREE.CylinderBufferGeometry}
- * @private
- */
-FORGE.HotspotGeometry.prototype._createCylinder = function(options)
-{
-    options = options || {};
-
-    var radiusTop = options.radiusTop || 10;
-    var radiusBottom = options.radiusBottom || 10;
-    var height = options.height || 20;
-    var radiusSegments = options.radiusSegments || 32;
-    var heightSegments = options.heightSegments || 1;
-    var openEnded = options.openEnded || false;
-    var thetaStart = options.thetaStart || 0;
-    var thetaLength = options.thetaLength || 2 * Math.PI;
-
-    return new THREE.CylinderBufferGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength);
-};
-
-/**
- * @method FORGE.HotspotGeometry#_createShape
+ * @method FORGE.HotspotGeometry.SHAPE
  * @param {HotspotGeometryShape=} options
  * @return {THREE.ShapeBufferGeometry}
- * @private
  */
-FORGE.HotspotGeometry.prototype._createShape = function(options)
+FORGE.HotspotGeometry.SHAPE = function(options)
 {
     options = options || {};
 
@@ -20271,150 +19109,81 @@ FORGE.HotspotGeometry.prototype._createShape = function(options)
 };
 
 /**
- * Load a hotspot geometry config
- * @method FORGE.HotspotGeometry#load
- * @param {HotspotGeometryConfig} config
+ * @method FORGE.HotspotGeometry.PLANE
+ * @param {HotspotGeometryPlane=} options
+ * @return {THREE.PlaneBufferGeometry}
  */
-FORGE.HotspotGeometry.prototype.load = function(config)
+FORGE.HotspotGeometry.PLANE = function(options)
 {
-    if (typeof config !== "undefined" && typeof config.type === "string")
-    {
-        this._config = config;
-    }
-    else
-    {
-        this._config = /** @type {HotspotGeometryConfig} */ (FORGE.Utils.extendSimpleObject({}, FORGE.HotspotGeometry.DEFAULT_CONFIG));
-    }
+    options = options || {};
 
-    this._parseConfig(this._config);
+    var width = options.width || 20;
+    var height = options.height || 20;
+    var widthSegments = options.widthSegments || 8;
+    var heightSegments = options.heightSegments || 8;
 
-    if(this._onLoadComplete !== null)
-    {
-        this._onLoadComplete.dispatch();
-    }
+    return new THREE.PlaneBufferGeometry(width, height, widthSegments, heightSegments);
 };
 
 /**
- * Dump the geometry configuration
- * @method FORGE.HotspotGeometry#dump
- * @return {HotspotGeometryConfig} Return the actual hotspot geometry config
+ * @method FORGE.HotspotGeometry.BOX
+ * @param {HotspotGeometryBox=} options
+ * @return {THREE.BoxBufferGeometry}
  */
-FORGE.HotspotGeometry.prototype.dump = function()
+FORGE.HotspotGeometry.BOX = function(options)
 {
-    var dump =
-    {
-        type: this._type
-    };
+    options = options || {};
 
-    var options = {};
+    var width = options.width || 20;
+    var height = options.height || 20;
+    var depth = options.depth || 20;
+    var widthSegments = options.widthSegments || 8;
+    var heightSegments = options.heightSegments || 8;
+    var depthSegments = options.depthSegments || 8;
 
-    switch(this._type)
-    {
-        case FORGE.HotspotGeometryType.PLANE:
-        case FORGE.HotspotGeometryType.BOX:
-        case FORGE.HotspotGeometryType.SPHERE:
-        case FORGE.HotspotGeometryType.CYLINDER:
-            options = this._geometry.parameters;
-            break;
-
-        case FORGE.HotspotGeometryType.SHAPE:
-
-            var points = [];
-            if(Array.isArray(this._geometry.parameters.shapes.curves) === true)
-            {
-                var c = this._geometry.parameters.shapes.curves;
-
-                points.push([c[0].v1.x, c[0].v1.y]);
-                points.push([c[0].v2.x, c[0].v2.y]);
-
-                for(var i = 1, ii = c.length; i < ii; i++)
-                {
-                    points.push([c[i].v2.x, c[i].v2.y]);
-                }
-            }
-            else
-            {
-                points = this._config.options.points;
-            }
-
-            options = { points: points };
-
-            break;
-    }
-
-    dump.options = options;
-
-    return dump;
+    return new THREE.BoxBufferGeometry(width, height, depth, widthSegments, heightSegments, depthSegments);
 };
 
 /**
- * Destroy sequence
- * @method FORGE.HotspotGeometry#destroy
+ * @method FORGE.HotspotGeometry.SPHERE
+ * @param {HotspotGeometrySphere=} options
+ * @return {THREE.SphereBufferGeometry}
  */
-FORGE.HotspotGeometry.prototype.destroy = function()
+FORGE.HotspotGeometry.SPHERE = function(options)
 {
-    if(this._geometry !== null)
-    {
-        this._geometry.dispose();
-        this._geometry = null;
-    }
+    options = options || {};
 
-    if(this._onLoadComplete !== null)
-    {
-        this._onLoadComplete.destroy();
-        this._onLoadComplete = null;
-    }
+    var radius = options.radius || 10;
+    var widthSegments = options.widthSegments || 64;
+    var heightSegments = options.heightSegments || 64;
+    var phiStart = options.phiStart || 0;
+    var phiLength = options.phiLength || 2 * Math.PI;
+    var thetaStart = options.thetaStart || 0;
+    var thetaLength = options.thetaLength || 2 * Math.PI;
+
+    return new THREE.SphereBufferGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength);
 };
 
 /**
- * Geometry type accessor
- * @name FORGE.HotspotGeometry#type
- * @readonly
- * @type {string}
+ * @method FORGE.HotspotGeometry.CYLINDER
+ * @param {HotspotGeometryCylinder=} options
+ * @return {THREE.CylinderBufferGeometry}
  */
-Object.defineProperty(FORGE.HotspotGeometry.prototype, "type",
+FORGE.HotspotGeometry.CYLINDER = function(options)
 {
-    /** @this {FORGE.HotspotGeometry} */
-    get: function()
-    {
-        return this._type;
-    }
-});
+    options = options || {};
 
-/**
- * Geometry accessor
- * @name FORGE.HotspotGeometry#geometry
- * @readonly
- * @type {THREE.Geometry}
- */
-Object.defineProperty(FORGE.HotspotGeometry.prototype, "geometry",
-{
-    /** @this {FORGE.HotspotGeometry} */
-    get: function()
-    {
-        return this._geometry;
-    }
-});
+    var radiusTop = options.radiusTop || 10;
+    var radiusBottom = options.radiusBottom || 10;
+    var height = options.height || 20;
+    var radiusSegments = options.radiusSegments || 32;
+    var heightSegments = options.heightSegments || 1;
+    var openEnded = options.openEnded || false;
+    var thetaStart = options.thetaStart || 0;
+    var thetaLength = options.thetaLength || 2 * Math.PI;
 
-/**
- * Get the onLoadComplete {@link FORGE.EventDispatcher}.
- * @name  FORGE.HotspotGeometry#onLoadComplete
- * @readonly
- * @type {FORGE.EventDispatcher}
- */
-Object.defineProperty(FORGE.HotspotGeometry.prototype, "onLoadComplete",
-{
-    /** @this {FORGE.HotspotGeometry} */
-    get: function()
-    {
-        if (this._onLoadComplete === null)
-        {
-            this._onLoadComplete = new FORGE.EventDispatcher(this);
-        }
-
-        return this._onLoadComplete;
-    }
-});
+    return new THREE.CylinderBufferGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength);
+};
 
 /**
  * @namespace {Object} FORGE.HotspotGeometryType
@@ -20530,7 +19299,7 @@ FORGE.HotspotTransform.prototype._parseConfig = function(config)
     {
         var position = FORGE.Utils.extendSimpleObject(this._position.dump(), this._parsePosition(config.position));
 
-        if (FORGE.Utils.compareObjects(this._position.dump(), position) === false)
+        if(FORGE.Utils.compareObjects(this._position.dump(), position) === false)
         {
             this._position.load(/** @type {HotspotTransformValuesConfig} */ (position), false);
             changed = true;
@@ -20545,7 +19314,7 @@ FORGE.HotspotTransform.prototype._parseConfig = function(config)
         rotation.y = (typeof config.rotation.y === "number") ? config.rotation.y : 0;
         rotation.z = (typeof config.rotation.z === "number") ? config.rotation.z : 0;
 
-        if (FORGE.Utils.compareObjects(this._rotation.dump(), rotation) === false)
+        if(FORGE.Utils.compareObjects(this._rotation.dump(), rotation) === false)
         {
             this._rotation.load(/** @type {HotspotTransformValuesConfig} */ (rotation), false);
             changed = true;
@@ -20560,7 +19329,7 @@ FORGE.HotspotTransform.prototype._parseConfig = function(config)
         scale.y = (typeof config.scale.y === "number") ? FORGE.Math.clamp(config.scale.y, 0.000001, 100000) : 1;
         scale.z = (typeof config.scale.z === "number") ? FORGE.Math.clamp(config.scale.z, 0.000001, 100000) : 1;
 
-        if (FORGE.Utils.compareObjects(this._scale.dump(), scale) === false)
+        if(FORGE.Utils.compareObjects(this._scale.dump(), scale) === false)
         {
             this._scale.load(/** @type {HotspotTransformValuesConfig} */ (scale), false);
             changed = true;
@@ -20591,13 +19360,19 @@ FORGE.HotspotTransform.prototype._parsePosition = function(config)
         position.y = (typeof config.y === "number") ? config.y : 0;
         position.z = (typeof config.z === "number") ? config.z : -200;
 
-        if (typeof config.radius === "number" || typeof config.theta === "number" || typeof config.phi === "number")
+        if(typeof config.radius === "number" || typeof config.theta === "number" || typeof config.phi === "number")
         {
             var radius = (typeof config.radius === "number") ? config.radius : 200;
             var theta = (typeof config.theta === "number") ? FORGE.Math.degToRad(config.theta) : 0;
             var phi = (typeof config.phi === "number") ? FORGE.Math.degToRad(config.phi) : 0;
 
-            position = FORGE.Math.sphericalToCartesian(radius, theta, phi);
+            theta = FORGE.Math.wrap(Math.PI - theta, -Math.PI, Math.PI);
+
+            var cartesian = new THREE.Vector3().setFromSpherical(FORGE.Utils.toTHREESpherical(radius, theta, phi));
+
+            position.x = cartesian.x;
+            position.y = cartesian.y;
+            position.z = cartesian.z;
         }
     }
 
@@ -20627,27 +19402,10 @@ FORGE.HotspotTransform.prototype.load = function(config, notify)
 {
     var changed = this._parseConfig(config);
 
-    if (notify !== false && changed === true)
+    if(notify !== false && changed === true)
     {
         this.notifyChange();
     }
-};
-
-/**
- * Dump the transform actual configuration
- * @method FORGE.HotspotTransform#dump
- * @return {HotspotTransformConfig} Return the hotspot transform configuration
- */
-FORGE.HotspotTransform.prototype.dump = function()
-{
-    var dump =
-    {
-        position: this._position.dump(),
-        rotation: this._rotation.dump(),
-        scale: this._scale.dump()
-    };
-
-    return dump;
 };
 
 /**
@@ -20741,7 +19499,6 @@ Object.defineProperty(FORGE.HotspotTransform.prototype, "onChange",
         return this._onChange;
     }
 });
-
 /**
  * HotspotTransformValues handle the three values x, y and z.
  *
@@ -20963,20 +19720,6 @@ Object.defineProperty(FORGE.HotspotTransformValues.prototype, "z",
 });
 
 /**
- * Get the vector representing the values
- * @name FORGE.HotspotTransformValues#values
- * @type {THREE.Vector3}
- */
-Object.defineProperty(FORGE.HotspotTransformValues.prototype, "values",
-{
-    /** @this {FORGE.HotspotTransformValues} */
-    get: function()
-    {
-        return new THREE.Vector3(this._x, this._y, this._z);
-    }
-});
-
-/**
  * Get the onChange {@link FORGE.EventDispatcher}.
  * @name FORGE.HotspotTransformValues#onChange
  * @readonly
@@ -20995,7 +19738,6 @@ Object.defineProperty(FORGE.HotspotTransformValues.prototype, "onChange",
         return this._onChange;
     }
 });
-
 /**
  * A FORGE.HotspotAnimation is used to animate a hotspot.
  *
@@ -21271,7 +20013,9 @@ FORGE.HotspotAnimation.prototype.play = function(track)
                 var theta = (typeof pos.theta === "number") ? FORGE.Math.degToRad(pos.theta) : FORGE.Math.degToRad(this._computeIntermediateValue(time, track.keyframes, "theta", posAnimation.tween.easing, "position"));
                 var phi = (typeof pos.phi === "number") ? FORGE.Math.degToRad(pos.phi) : FORGE.Math.degToRad(this._computeIntermediateValue(time, track.keyframes, "phi", posAnimation.tween.easing, "position"));
 
-                var cartesian = FORGE.Math.sphericalToCartesian(radius, theta, phi);
+                theta = FORGE.Math.wrap(Math.PI - theta, -Math.PI, Math.PI);
+
+                var cartesian = new THREE.Vector3().setFromSpherical(FORGE.Utils.toTHREESpherical(radius, theta, phi));
 
                 x = cartesian.x;
                 y = cartesian.y;
@@ -21541,7 +20285,6 @@ FORGE.HotspotStates = function(viewer, hotspotUid)
      */
     this._loading =
     {
-        geometry: false,
         transform: false,
         material: false,
         sound: false,
@@ -21650,32 +20393,6 @@ FORGE.HotspotStates.prototype._getStatesNames = function()
     }
 
     return keys;
-};
-
-/**
- * Update the geometry for the current state
- * @method FORGE.HotspotStates#_updateGeometry
- * @param  {HotspotGeometryConfig} config - The hotspot geometry configuration object.
- * @private
- */
-FORGE.HotspotStates.prototype._updateGeometry = function(config)
-{
-    this.log("update geometry");
-
-    var hotspot = FORGE.UID.get(this._hotspotUid);
-    hotspot.geometry.onLoadComplete.addOnce(this._geometryLoadCompleteHandler, this);
-    hotspot.geometry.load(config);
-};
-
-/**
- * Geometry load complete event handler
- * @method FORGE.HotspotStates#_geometryLoadCompleteHandler
- * @private
- */
-FORGE.HotspotStates.prototype._geometryLoadCompleteHandler = function()
-{
-    this._loading.geometry = false;
-    this._checkLoading();
 };
 
 /**
@@ -21825,6 +20542,11 @@ FORGE.HotspotStates.prototype.load = function(name)
     // Set the state name
     this._state = name;
 
+    if(typeof this._config[name].material === "object")
+    {
+        this._loading.material = true;
+    }
+
     if(typeof this._config[name].sound === "object")
     {
         this._loading.sound = true;
@@ -21835,8 +20557,7 @@ FORGE.HotspotStates.prototype.load = function(name)
         this._loading.animation = true;
     }
 
-    this._loading.material = true;
-    this._loading.geometry = true;
+    // There is always a transform
     this._loading.transform = true;
 
     if(this._loading.material === true)
@@ -21857,17 +20578,12 @@ FORGE.HotspotStates.prototype.load = function(name)
         this._updateAnimation(animationConfig);
     }
 
-    if(this._loading.geometry === true)
-    {
-        var geometryConfig = /** @type {HotspotGeometryConfig} */ (FORGE.Utils.extendSimpleObject(hotspot.config.geometry, this._config[name].geometry));
-        this._updateGeometry(geometryConfig);
-    }
-
     if(this._loading.transform === true)
     {
         var transformConfig = /** @type {HotspotTransformConfig} */ (FORGE.Utils.extendSimpleObject(hotspot.config.transform, this._config[name].transform));
         this._updateTransform(transformConfig);
     }
+
 };
 
 /**
@@ -22008,12 +20724,6 @@ FORGE.HotspotType = {};
  */
 FORGE.HotspotType.THREE_DIMENSIONAL = "3d";
 
-/**
- * @name FORGE.HotspotType.DOM
- * @type {string}
- * @const
- */
-FORGE.HotspotType.DOM = "dom";
 
 /**
  * A FORGE.Camera tells the renderer wich part of the scene to render.
@@ -22054,7 +20764,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._yawMin = -Infinity;
+    this._yawMin = 0;
 
     /**
      * The yaw maximum value in radians.
@@ -22062,7 +20772,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._yawMax = Infinity;
+    this._yawMax = 0;
 
     /**
      * The pitch value in radians.
@@ -22078,7 +20788,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._pitchMin = -Infinity;
+    this._pitchMin = 0;
 
     /**
      * The pitch maximum value  in radians.
@@ -22086,7 +20796,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._pitchMax = Infinity;
+    this._pitchMax = 0;
 
     /**
      * The roll value in radians.
@@ -22102,7 +20812,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._rollMin = -Infinity;
+    this._rollMin = 0;
 
     /**
      * The roll maximum value in radians.
@@ -22110,7 +20820,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._rollMax = Infinity;
+    this._rollMax = 0;
 
     /**
      * The fov value in radians.
@@ -22118,7 +20828,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._fov = 90;
+    this._fov = 0;
 
     /**
      * The fov minimum value in radians.
@@ -22134,7 +20844,7 @@ FORGE.Camera = function(viewer)
      * @type {number}
      * @private
      */
-    this._fovMax = Infinity;
+    this._fovMax = 0;
 
     /**
      * Parallax setting
@@ -22144,14 +20854,6 @@ FORGE.Camera = function(viewer)
      * @private
      */
     this._parallax = 0;
-
-    /**
-     * Does the camera keep its orientation between scenes?
-     * @name FORGE.Camera#_keep
-     * @type {boolean}
-     * @private
-     */
-    this._keep = false;
 
     /**
      * The modelview rotation matrix.
@@ -22234,14 +20936,6 @@ FORGE.Camera = function(viewer)
     this._gaze = null;
 
     /**
-     * Is the camera have load its configuration at least one time? For keep feature.
-     * @name FORGE.Camera#_initialized
-     * @type {boolean}
-     * @private
-     */
-    this._initialized = false;
-
-    /**
      * On camera change event dispatcher.
      * @name FORGE.Camera#_onCameraChange
      * @type {FORGE.EventDispatcher}
@@ -22271,9 +20965,7 @@ FORGE.Camera.RADIUS = 50;
  * @type {CameraConfig}
  * @const
  */
-FORGE.Camera.DEFAULT_CONFIG =
-{
-    keep: false,
+FORGE.Camera.DEFAULT_CONFIG = {
     parallax: 0,
     yaw:
     {
@@ -22349,12 +21041,6 @@ FORGE.Camera.prototype._parseConfig = function(config)
 {
     this._parallax = config.parallax;
     this._radius = this._parallax * FORGE.Camera.RADIUS;
-    this._keep = config.keep;
-
-    if(this._keep === true && this._initialized === true)
-    {
-        return;
-    }
 
     if (typeof config.yaw.min === "number")
     {
@@ -23045,8 +21731,6 @@ FORGE.Camera.prototype.load = function(config)
     this._config = /** @type {CameraConfig} */ (FORGE.Utils.extendMultipleObjects(FORGE.Camera.DEFAULT_CONFIG, config));
 
     this._parseConfig(this._config);
-
-    this._initialized = true;
 };
 
 /**
@@ -23148,7 +21832,7 @@ FORGE.Camera.prototype.destroy = function()
 };
 
 /**
- * Get and set the camera configuration (default min & max for all angles yaw, pitch, roll and fov).
+ * Get and set the ycamera configuration (default min & max for all angles yaw, pitch, roll and fov).
  * @name FORGE.Camera#config
  * @type {CameraConfig}
  */
@@ -23164,21 +21848,6 @@ Object.defineProperty(FORGE.Camera.prototype, "config",
     set: function(config)
     {
         this.load(config);
-    }
-});
-
-/**
- * Get the keep flag
- * @name FORGE.Camera#keep
- * @type {boolean}
- * @readonly
- */
-Object.defineProperty(FORGE.Camera.prototype, "keep",
-{
-    /** @this {FORGE.Camera} */
-    get: function()
-    {
-        return this._keep;
     }
 });
 
@@ -23213,7 +21882,6 @@ Object.defineProperty(FORGE.Camera.prototype, "yaw",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#yawMin
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "yawMin",
 {
@@ -23230,7 +21898,6 @@ Object.defineProperty(FORGE.Camera.prototype, "yawMin",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#yawMax
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "yawMax",
 {
@@ -23273,7 +21940,6 @@ Object.defineProperty(FORGE.Camera.prototype, "pitch",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#pitchMin
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "pitchMin",
 {
@@ -23290,7 +21956,6 @@ Object.defineProperty(FORGE.Camera.prototype, "pitchMin",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#pitchMax
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "pitchMax",
 {
@@ -23333,7 +21998,6 @@ Object.defineProperty(FORGE.Camera.prototype, "roll",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#rollMin
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "rollMin",
 {
@@ -23350,7 +22014,6 @@ Object.defineProperty(FORGE.Camera.prototype, "rollMin",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#rollMax
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "rollMax",
 {
@@ -23392,7 +22055,6 @@ Object.defineProperty(FORGE.Camera.prototype, "fov",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#fovMin
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "fovMin",
 {
@@ -23409,7 +22071,6 @@ Object.defineProperty(FORGE.Camera.prototype, "fovMin",
  * Return the most restrictive value between the camera value and the view value.
  * @name FORGE.Camera#fovMax
  * @type {number}
- * @readonly
  */
 Object.defineProperty(FORGE.Camera.prototype, "fovMax",
 {
@@ -23488,6 +22149,7 @@ Object.defineProperty(FORGE.Camera.prototype, "parallax",
 /**
  * Get the modelView of the camera.
  * @name FORGE.Camera#modelView
+ * @readonly
  * @type {THREE.Matrix4}
  */
 Object.defineProperty(FORGE.Camera.prototype, "modelView",
@@ -23496,13 +22158,6 @@ Object.defineProperty(FORGE.Camera.prototype, "modelView",
     get: function()
     {
         return this._modelView;
-    },
-    /** @this {FORGE.Camera} */
-    set: function(value)
-    {
-        this._modelView = value;
-        this._updateFromMatrix();
-        this._updateComplete();
     }
 });
 
@@ -24425,15 +23080,10 @@ FORGE.ControllerManager.prototype.getByType = function(type)
 FORGE.ControllerManager.prototype.destroy = function()
 {
     var count = this._controllers.length - 1;
-    var ctrl;
     while(count--)
     {
-        ctrl = this._controllers[count];
-        if (ctrl !== null && typeof ctrl !== "undefined")
-        {
-            ctrl.destroy();
-            this._controllers[count] = null;
-        }
+        this._controllers[count].destroy();
+        this._controllers[count] = null;
     }
     this._controllers = null;
 
@@ -24832,7 +23482,7 @@ FORGE.ControllerPointer = function(viewer, config)
     this._fullscreen = true;
 
     /**
-     * Start position vector.
+     * Previous position vector.
      * @name FORGE.ControllerPointer#_positionStart
      * @type {THREE.Vector2}
      * @private
@@ -24840,37 +23490,12 @@ FORGE.ControllerPointer = function(viewer, config)
     this._positionStart = null;
 
     /**
-     * Current position vector.
+     * Previous position vector.
      * @name FORGE.ControllerPointer#_positionCurrent
      * @type {THREE.Vector2}
      * @private
      */
     this._positionCurrent = null;
-
-    /**
-     * Previous position vector.
-     * @name FORGE.ControllerPointer#_positionPrevious
-     * @type {THREE.Vector2}
-     * @private
-     */
-    this._positionPrevious = null;
-
-    /**
-     * The fov value when you start to pinch in/out
-     * @name FORGE.ControllerPointer#_pinchStartFov
-     * @type {number}
-     * @private
-     */
-    this._pinchStartFov = 0;
-
-    /**
-     * This is used when we have reached the minimum or maximum scale,
-     * in order not to have a "no-effect" zone when zooming the other way
-     * @name FORGE.ControllerPointer#_pinchScaleFactorCorrection
-     * @type {number}
-     * @private
-     */
-    this._pinchScaleFactorCorrection = 1;
 
     /**
      * Current velocity vector.
@@ -24887,14 +23512,6 @@ FORGE.ControllerPointer = function(viewer, config)
      * @private
      */
     this._inertia = null;
-
-    /**
-     * Panning flag.
-     * @name FORGE.ControllerPointer#_panning
-     * @type {boolean}
-     * @private
-     */
-    this._panning = false;
 
     FORGE.ControllerBase.call(this, viewer, "ControllerPointer");
 };
@@ -24913,7 +23530,6 @@ FORGE.ControllerPointer.DEFAULT_OPTIONS =
 
     orientation:
     {
-        drag: false,
         hardness: 0.6, //Hardness factor impatcing controller response to some instant force.
         damping: 0.15, //Damping factor controlling inertia.
         velocityMax: 300,
@@ -24926,8 +23542,7 @@ FORGE.ControllerPointer.DEFAULT_OPTIONS =
     zoom:
     {
         hardness: 5,
-        invert: false,
-        toPointer: false
+        invert: false
     }
 };
 
@@ -24945,7 +23560,6 @@ FORGE.ControllerPointer.prototype._boot = function()
     this._inertia = new THREE.Vector2();
     this._velocity = new THREE.Vector2();
     this._positionStart = new THREE.Vector2();
-    this._positionPrevious = new THREE.Vector2();
     this._positionCurrent = new THREE.Vector2();
 
     this._parseConfig(this._config);
@@ -24992,12 +23606,10 @@ FORGE.ControllerPointer.prototype._panStartHandler = function(event)
     this.log("_panStartHandler (" + event.data.velocityX.toFixed(2) + ", " + event.data.velocityY.toFixed(2) + ")");
 
     this._active = true;
-    this._panning = true;
 
-    var position = FORGE.Pointer.getRelativeMousePosition(event.data);
-    this._positionStart = new THREE.Vector2(position.x, position.y);
-    this._positionPrevious.copy(this._positionStart);
+    this._positionStart = new THREE.Vector2(event.data.center.x, event.data.center.y);
     this._positionCurrent.copy(this._positionStart);
+
     this._velocity.set(0, 0);
 
     if (this._onControlStart !== null)
@@ -25016,21 +23628,13 @@ FORGE.ControllerPointer.prototype._panStartHandler = function(event)
  */
 FORGE.ControllerPointer.prototype._panMoveHandler = function(event)
 {
-    var position = FORGE.Pointer.getRelativeMousePosition(event.data);
-
-    if(this._viewer.controllers.enabled === false || position === null)
+    if(this._viewer.controllers.enabled === false)
     {
         return;
     }
 
-    this._positionPrevious.copy(this._positionCurrent);
-    this._positionCurrent.set(position.x, position.y);
+    this._positionCurrent.set(event.data.center.x, event.data.center.y);
     // this.log("Current position: " + this._positionCurrent.x + ", " + this._positionCurrent.y);
-
-    if(this._orientation.drag === true && this._panning === true)
-    {
-        this._updateCameraWithDrag();
-    }
 };
 
 /**
@@ -25044,7 +23648,6 @@ FORGE.ControllerPointer.prototype._panEndHandler = function()
     this.log("_panEndHandler");
 
     this._active = false;
-    this._panning = false;
 
     this._velocity.set(0, 0);
     this._positionStart.set(0, 0);
@@ -25059,86 +23662,6 @@ FORGE.ControllerPointer.prototype._panEndHandler = function()
 };
 
 /**
- * Update the camera from the mouse position.
- * @method FORGE.ControllerPointer#_updateCameraWithDrag
- * @private
- */
-FORGE.ControllerPointer.prototype._updateCameraWithDrag = function()
-{
-    var stw0 = this._viewer.view.screenToWorld(this._positionPrevious);
-    var stw1 = this._viewer.view.screenToWorld(this._positionCurrent);
-
-    // If the screen point do not match any world position, return
-    if(stw0 === null || stw1 === null)
-    {
-        return;
-    }
-
-    var spherical0 = FORGE.Math.cartesianToSpherical(stw0.x, stw0.y, stw0.z);
-    var quat0 = FORGE.Quaternion.fromEuler(spherical0.theta, spherical0.phi, 0);
-
-    var spherical1 = FORGE.Math.cartesianToSpherical(stw1.x, stw1.y, stw1.z);
-    var quat1 = FORGE.Quaternion.fromEuler(spherical1.theta, spherical1.phi, 0);
-
-    this._camera.yaw += FORGE.Math.radToDeg(spherical0.theta - spherical1.theta);
-    this._camera.pitch += FORGE.Math.radToDeg(spherical0.phi - spherical1.phi);
-    this._camera.roll = 0;
-};
-
-/**
- * Update the camera from the velocity that results of the mouse movement.
- * @method FORGE.ControllerPointer#_updateCameraWithVelocity
- * @private
- */
-FORGE.ControllerPointer.prototype._updateCameraWithVelocity = function()
-{
-    var size = this._viewer.renderer.displayResolution;
-    var hardness = 1 / (this._orientation.hardness * Math.min(size.width, size.height));
-
-    this._velocity.subVectors(this._positionCurrent, this._positionStart);
-
-    if (this._velocity.length() > this._orientation.velocityMax)
-    {
-        this._velocity.setLength(this._orientation.velocityMax);
-    }
-
-    this._velocity.multiplyScalar(hardness);
-
-    // this.log("Current velocity: " + this._velocity.x + ", " + this._velocity.y);
-
-    var invert = this._orientation.invert;
-    var invertX = (invert === true) ? -1 : (typeof invert === "object" && invert.x === true) ? -1 : 1;
-    var invertY = (invert === true) ? -1 : (typeof invert === "object" && invert.y === true) ? -1 : 1;
-
-    var dx = this._velocity.x + this._inertia.x;
-    var dy = this._velocity.y + this._inertia.y;
-
-    if (dx === 0 && dy === 0)
-    {
-        return;
-    }
-
-    var yaw = invertX * dx;
-    //Do not move the camera anymore if the modifier is too low, this prevent onCameraChange to be fired too much times
-    if(Math.abs(yaw) > 0.05)
-    {
-        this._camera.yaw += yaw;
-        this._camera.flat.position.x += dx;
-    }
-
-    var pitch = invertY * dy;
-    //Do not move the camera anymore if the modifier is too low, this prevent onCameraChange to be fired too much times
-    if(Math.abs(pitch) > 0.05)
-    {
-        this._camera.pitch -= pitch;
-        this._camera.flat.position.y -= dy;
-    }
-
-    // Damping 1 -> stops instantly, 0 infinite rebounds
-    this._inertia.add(this._velocity).multiplyScalar(FORGE.Math.clamp(1 - this._orientation.damping, 0, 1));
-};
-
-/**
  * Pinch start event handler.
  * @method FORGE.ControllerPointer#_pinchStartHandler
  * @param {FORGE.Event} event - Event object
@@ -25150,9 +23673,6 @@ FORGE.ControllerPointer.prototype._pinchStartHandler = function(event)
     {
         return;
     }
-
-    this._pinchStartFov = this._camera.fov;
-    this._pinchScaleFactorCorrection = 1;
 
     this._viewer.canvas.pointer.onPinchMove.add(this._pinchMoveHandler, this);
     this.log("_pinchStartHandler "+event);
@@ -25171,26 +23691,7 @@ FORGE.ControllerPointer.prototype._pinchMoveHandler = function(event)
         return;
     }
 
-    event.data.preventDefault();
-
-    var scale = this._zoom.invert ? event.data.scale : 1 / event.data.scale;
-    var fovMin = this._camera.fovMin;
-    var fovMax = this._camera.fovMax;
-
-    var tmpFov = this._pinchStartFov * scale / this._pinchScaleFactorCorrection;
-
-    if (tmpFov < fovMin)
-    {
-        this._pinchScaleFactorCorrection = this._pinchStartFov * scale / fovMin;
-    }
-    else if (tmpFov > fovMax)
-    {
-        this._pinchScaleFactorCorrection = this._pinchStartFov * scale / fovMax;
-    }
-
-    tmpFov = this._pinchStartFov * scale / this._pinchScaleFactorCorrection;
-
-    this._camera.fov = tmpFov;
+    this.log("_pinchMoveHandler " + event.data["pinch"]);
 };
 
 /**
@@ -25244,34 +23745,7 @@ FORGE.ControllerPointer.prototype._wheelHandler = function(event)
         delta *= (event.data.deltaY * factorDeltaY) / 5;
     }
 
-    var fov = this._camera.fov - delta;
-
-    if(this._zoom.toPointer === true)
-    {
-        var screen = FORGE.Pointer.getRelativeMousePosition(event.data);
-        var stw0 = this._viewer.view.screenToWorld(screen);
-        var spherical0 = FORGE.Math.cartesianToSpherical(stw0.x, stw0.y, stw0.z);
-        var quat0 = FORGE.Quaternion.fromEuler(spherical0.theta, spherical0.phi, 0);
-
-        // Change the camera fov
-        this._camera.fov = fov;
-        this._viewer.view.current.updateUniforms();
-
-        var stw1 = this._viewer.view.screenToWorld(screen);
-        var spherical1 = FORGE.Math.cartesianToSpherical(stw1.x, stw1.y, stw1.z);
-        var quat1 = FORGE.Quaternion.fromEuler(spherical1.theta, spherical1.phi, 0);
-
-        var quat = FORGE.Quaternion.diffBetweenQuaternions(quat1, quat0);
-        var euler = FORGE.Quaternion.toEuler(quat);
-
-        this._camera.yaw += FORGE.Math.radToDeg(euler.yaw);
-        this._camera.pitch += FORGE.Math.radToDeg(euler.pitch);
-    }
-    else
-    {
-        this._camera.fov = fov;
-    }
-
+    this._camera.fov = this._camera.fov - delta;
     this.log("_wheelHandler (fov:" + this._camera.fov + ")");
 };
 
@@ -25334,10 +23808,50 @@ FORGE.ControllerPointer.prototype.disable = function()
  */
 FORGE.ControllerPointer.prototype.update = function()
 {
-    if(this._orientation.drag !== true)
+    var size = this._viewer.renderer.displayResolution;
+    var hardness = 1 / (this._orientation.hardness * Math.min(size.width, size.height));
+
+    this._velocity.subVectors(this._positionCurrent, this._positionStart);
+
+    if (this._velocity.length() > this._orientation.velocityMax)
     {
-        this._updateCameraWithVelocity();
+        this._velocity.setLength(this._orientation.velocityMax);
     }
+
+    this._velocity.multiplyScalar(hardness);
+
+    // this.log("Current velocity: " + this._velocity.x + ", " + this._velocity.y);
+
+    var invert = this._orientation.invert;
+    var invertX = (invert === true) ? -1 : (typeof invert === "object" && invert.x === true) ? -1 : 1;
+    var invertY = (invert === true) ? -1 : (typeof invert === "object" && invert.y === true) ? -1 : 1;
+
+    var dx = this._velocity.x + this._inertia.x;
+    var dy = this._velocity.y + this._inertia.y;
+
+    if (dx === 0 && dy === 0)
+    {
+        return;
+    }
+
+    var yaw = invertX * dx;
+    //Do not move the camera anymore if the modifier is too low, this prevent onCameraChange to be fired too much times
+    if(Math.abs(yaw) > 0.05)
+    {
+        this._camera.yaw += yaw;
+        this._camera.flat.position.x += dx;
+    }
+
+    var pitch = invertY * dy;
+    //Do not move the camera anymore if the modifier is too low, this prevent onCameraChange to be fired too much times
+    if(Math.abs(pitch) > 0.05)
+    {
+        this._camera.pitch -= pitch;
+        this._camera.flat.position.y -= dy;
+    }
+
+    // Damping 1 -> stops instantly, 0 infinite rebounds
+    this._inertia.add(this._velocity).multiplyScalar(FORGE.Math.clamp(1 - this._orientation.damping, 0, 1));
 };
 
 /**
@@ -25348,44 +23862,6 @@ FORGE.ControllerPointer.prototype.destroy = function()
 {
     FORGE.ControllerBase.prototype.destroy.call(this);
 };
-
-/**
- * Get and set the orientation options
- * @name FORGE.ControllerPointer#orientation
- * @type {boolean}
- */
-Object.defineProperty(FORGE.ControllerPointer.prototype, "orientation",
-{
-    /** @this {FORGE.ControllerPointer} */
-    get: function()
-    {
-        return this._orientation;
-    },
-    /** @this {FORGE.ControllerPointer} */
-    set: function(value)
-    {
-        this._orientation = value;
-    }
-});
-
-/**
- * Get and set the zoom options
- * @name FORGE.ControllerPointer#zoom
- * @type {boolean}
- */
-Object.defineProperty(FORGE.ControllerPointer.prototype, "zoom",
-{
-    /** @this {FORGE.ControllerPointer} */
-    get: function()
-    {
-        return this._zoom;
-    },
-    /** @this {FORGE.ControllerPointer} */
-    set: function(value)
-    {
-        this._zoom = value;
-    }
-});
 
 /**
  * @constructor FORGE.ControllerKeyboard
@@ -26011,7 +24487,7 @@ FORGE.ControllerGyroscope.prototype._boot = function()
 
 /**
  * Device ready handler. Enables the gyro controller if gyro is available on the device.
- * @method FORGE.ControllerGyroscope#_deviceReadyHandler
+ * @method FORGE.ControlerGyroscope#_deviceReadyHandler
  * @private
  */
 FORGE.ControllerGyroscope.prototype._deviceReadyHandler = function()
@@ -27444,12 +25920,10 @@ FORGE.SoundManager.prototype._setContextListenerOrientation = function()
         var cameraDirection = new THREE.Vector3();
         var qCamera = this._viewer.renderer.camera.main.quaternion;
 
-        // front vector indicating where the listener is facing to
-        cameraDirection.set(0, 0, -1);
+        cameraDirection.set(0, 0, 1); //@todo verify the perspective matrix (0, 0, -1)
         cameraDirection.applyQuaternion(qCamera);
         var camera = cameraDirection.clone();
 
-        // up vector repesenting the direction of the top of the listener head
         cameraDirection.set(0, 1, 0);
         cameraDirection.applyQuaternion(qCamera);
         var cameraUp = cameraDirection;
@@ -32837,7 +31311,7 @@ FORGE.Director.prototype._clearEvents = function()
 {
     this._viewer.camera.animation.onComplete.remove(this._onTrackCompleteHandler, this);
 
-    if (this._viewer.story.scene !== null && this._viewer.story.scene.media.type === FORGE.MediaType.VIDEO)
+    if (this._viewer.story.scene.media.type === FORGE.MediaType.VIDEO)
     {
         this._viewer.story.scene.media.displayObject.onPlay.remove(this._playHandler, this);
         this._viewer.story.scene.media.displayObject.onPause.remove(this._pauseHandler, this);
@@ -36982,107 +35456,31 @@ FORGE.Device = (function(c)
 
     /**
      * Check device requirement for an object from configuration/manifest.
-     * @method FORGE.Device.check
-     * @static
-     * @param {Object} config - The device requirement configuration of the configuration/manifest.
-     * @param {Object} [device=FORGE.Device] - The device environment to test. The default is FORGE.Device detection, but we need to modify it in test suites.
-     * @param {string} [condition="and"] [description]
+     * @method FORGE.Device#check
+     * @param  {Object} config - The device requirement configuration of the configuration/manifest.
      * @return {boolean} Returns true if the object is compatible with the device environment, false if not.
      */
-    Tmp.prototype.check = function(config, device, condition)
+    Tmp.prototype.check = function(config)
     {
-        condition = condition || "and";
-        device = device || FORGE.Device;
-
-        var result = true;
+        //If configuration is undefined, the object has no device limitations
+        if(typeof config === "undefined")
+        {
+            return true;
+        }
 
         for(var i in config)
         {
-            if(i === "and")
+            if(typeof this[i] === "undefined")
             {
-                result = FORGE.Device.check(config[i], device, "and");
+                console.warn("Unable to check plugin device compatibility for: "+i);
             }
-            else if(i === "or")
+            else if(this[i] !== config[i])
             {
-                result = FORGE.Device.check(config[i], device, "or");
-            }
-            else
-            {
-                result = FORGE.Device.checkValue(config[i], device[i]);
-            }
-
-            if(condition === "and" && result === false)
-            {
-                break;
-            }
-            else if(condition === "or" && result === true)
-            {
-                break;
+                return false;
             }
         }
 
-        return result;
-    };
-
-    /**
-     * Check a single device config for the main check method
-     * @method FORGE.Device.checkValue
-     * @static
-     * @param  {(Object|boolean|number|string)} config - The configuration to check
-     * @param  {(boolean|number|string)} device - The device value
-     * @return {boolean}
-     */
-    Tmp.prototype.checkValue = function(config, device)
-    {
-        var operation = "===";
-        var value;
-
-        if(typeof config === "object")
-        {
-            if(typeof config.operation === "string")
-            {
-                operation = config.operation;
-            }
-
-            value = config.value;
-        }
-        else
-        {
-            value = config;
-        }
-
-        var result = false;
-
-        switch(operation)
-        {
-            case "==":
-            case "===":
-                result = device === value;
-                break;
-
-            case "!=":
-            case "!==":
-                result = device !== value;
-                break;
-
-            case "<":
-                result = device < value;
-                break;
-
-            case "<=":
-                result = device <= value;
-                break;
-
-            case ">":
-                result = device > value;
-                break;
-
-            case ">=":
-                result = device >= value;
-                break;
-        }
-
-        return result;
+        return true;
     };
 
     /**
@@ -44551,48 +42949,6 @@ FORGE.Pointer.prototype.destroy = function()
 };
 
 /**
- * Get the relative mouse position inside the target element of a mouse event
- * @method FORGE.Pointer.getRelativeMousePosition
- * @static
- * @param {MouseEvent} event - The mouse event
- * @return {THREE.Vector2}
- */
-FORGE.Pointer.getRelativeMousePosition = function(event)
-{
-    if(typeof event.target.getBoundingClientRect === "function")
-    {
-        var rect = event.target.getBoundingClientRect();
-
-        // event.center is part of an Hammer event but it is not set on all kinds of events.
-        if(typeof event.center !== "undefined")
-        {
-            var centerX = event.center.x;
-            var centerY = event.center.y;
-        }
-
-        var clientX = event.clientX;
-        var clientY = event.clientY;
-        var pageX = event.pageX;
-        var pageY = event.pageY;
-
-        if(typeof event.srcEvent !== "undefined")
-        {
-            clientX = event.srcEvent.clientX;
-            clientY = event.srcEvent.clientY;
-            pageX = event.srcEvent.pageX;
-            pageY = event.srcEvent.pageY;
-        }
-
-        var x = (centerX || clientX || pageX) - rect.left;
-        var y = (centerY || clientY || pageY) - rect.top;
-
-        return new THREE.Vector2(x, y);
-    }
-
-    return null;
-};
-
-/**
 * Get or set the enabled flag.
 * @name FORGE.Pointer#enabled
 * @type {boolean}
@@ -49467,7 +47823,7 @@ FORGE.DisplayObjectContainer.prototype.addChild = function(child)
 
 /**
  * Add a child to this display object container at a specific index.
- * @method  FORGE.DisplayObjectContainer#addChildAt
+ * @method  FORGE.DisplayObjectContainer#addChild
  * @param {FORGE.DisplayObject} child - The {@link FORGE.DisplayObject} you want to add to this display object container.
  * @param {number} index - The index you want to apply to your child.
  */
@@ -53020,14 +51376,6 @@ FORGE.Image = function(viewer, config, className)
      */
     this._onLoadComplete = null;
 
-    /**
-     * On load error event dispatcher.
-     * @name  FORGE.Image#_onLoaderror
-     * @type {FORGE.EventDispatcher}
-     * @private
-     */
-    this._onLoadError = null;
-
     FORGE.DisplayObject.call(this, viewer, null, className || "Image");
 };
 
@@ -53373,7 +51721,7 @@ FORGE.Image.prototype._updateScaleHeight = function()
 FORGE.Image.prototype._loadImage = function(key, url)
 {
     this._loaded = false;
-    this._viewer.load.image(key, url, this._loadImageComplete, this._loadImageError, this);
+    this._viewer.load.image(key, url, this._loadImageComplete, this);
 };
 
 /**
@@ -53399,27 +51747,6 @@ FORGE.Image.prototype._loadImageComplete = function(file)
     this._imageLoaded = true;
 
     this._loadComplete();
-};
-
-/**
- * Event handler for image load error.
- * @method FORGE.Image#_loadImageError
- * @private
- */
-FORGE.Image.prototype._loadImageError = function(file)
-{
-    //If image is destroy during loading time, don't execute the callback
-    if(this._alive === false)
-    {
-        return;
-    }
-
-    this.warn(file.url + " load error");
-
-    if(this._onLoadError !== null)
-    {
-        this._onLoadError.dispatch();
-    }
 };
 
 /**
@@ -53665,12 +51992,6 @@ FORGE.Image.prototype.destroy = function(clearCache)
         this._onLoadComplete = null;
     }
 
-    if(this._onLoadError !== null)
-    {
-        this._onLoadError.destroy();
-        this._onLoadError = null;
-    }
-
     this._img = null;
 
     if(typeof clearCache === "undefined" || clearCache === true)
@@ -53847,26 +52168,6 @@ Object.defineProperty(FORGE.Image.prototype, "onLoadComplete",
         }
 
         return this._onLoadComplete;
-    }
-});
-
-/**
-* Get the onLoadError {@link FORGE.EventDispatcher}.
-* @name FORGE.Image#onLoadError
-* @readonly
-* @type {FORGE.EventDispatcher}
-*/
-Object.defineProperty(FORGE.Image.prototype, "onLoadError",
-{
-    /** @this {FORGE.Image} */
-    get: function()
-    {
-        if(this._onLoadError === null)
-        {
-            this._onLoadError = new FORGE.EventDispatcher(this);
-        }
-
-        return this._onLoadError;
     }
 });
 
@@ -59346,10 +57647,6 @@ FORGE.VideoDash.prototype._initDashMediaPlayer = function()
     this._dashMediaPlayer.initialize();
     // playback is paused on start
     this._dashMediaPlayer.setAutoPlay(false);
-    //keep downloading fragments in the background when paused
-    this._dashMediaPlayer.setScheduleWhilePaused(true);
-    //fast switch with ABR
-    this._dashMediaPlayer.setFastSwitchEnabled(true);
     // add video tag element and video source file
     this._dashMediaPlayer.attachView(this._video.element);
     this._dashMediaPlayer.attachSource(this._manifestUrl);
@@ -62858,11 +61155,10 @@ FORGE.Loader.prototype._xhr = function(file, type, onComplete, onError, onProgre
  * @method FORGE.Loader#image
  * @param  {string} key - The key for the image file.
  * @param  {string} url - The url of the image file.
- * @param  {Function} success - The success callback function called when file is completed.
- * @param  {Function} error - The error callback function called when file won't load.
- * @param  {Object} context - The callbacks context when file is completed.
+ * @param  {Function} callback - The callback function called when file is completed.
+ * @param  {Object} context - The callback context when file is completed.
  */
-FORGE.Loader.prototype.image = function(key, url, success, error, context)
+FORGE.Loader.prototype.image = function(key, url, callback, context)
 {
     var file = new FORGE.File();
     file.type = "image";
@@ -62881,12 +61177,7 @@ FORGE.Loader.prototype.image = function(key, url, success, error, context)
         file.loaded = true;
 
         this._viewer.cache.add(FORGE.Cache.types.IMAGE, file.key, file);
-
-        if(typeof success === "function")
-        {
-            success.call(context, file);
-        }
-
+        callback.call(context, file);
     }.bind(this);
 
     file.data.onerror = function()
@@ -62894,14 +61185,7 @@ FORGE.Loader.prototype.image = function(key, url, success, error, context)
         file.data.onload = null;
         file.data.onerror = null;
 
-        if(typeof error === "function")
-        {
-            error.call(context, file);
-        }
-        else
-        {
-            throw "ERROR : FORGE.Loader.image, failed to load image key : " + key + " at url " + url;
-        }
+        throw "ERROR : FORGE.Loader.image, failed to load image key : " + key + " at url " + url;
     };
 
     file.data.src = file.url;
@@ -62980,6 +61264,148 @@ FORGE.Loader.prototype.destroy = function()
 
     FORGE.BaseObject.prototype.destroy.call(this);
 };
+
+/**
+ * Manager for the dependencies (scripts).
+ *
+ * @constructor  FORGE.DependencyManager
+ * @param {FORGE.Viewer} viewer - Reference to the FORGE.Viewer.
+ * @extends {FORGE.BaseObject}
+ */
+FORGE.DependencyManager = function(viewer)
+{
+    /**
+     * Viewer reference.
+     * @name FORGE.DependencyManager#_viewer
+     * @type {FORGE.Viewer}
+     * @private
+     */
+    this._viewer = viewer;
+
+    /**
+     * Number of dependencies.
+     * @name FORGE.DependencyManager#_dependenciesCounter
+     * @type {number}
+     * @private
+     */
+    this._dependenciesCounter = 0;
+
+    /**
+     * Number of loaded dependencies.
+     * @name FORGE.DependencyManager#_dependenciesLoaded
+     * @type {number}
+     * @private
+     */
+    this._dependenciesLoaded = 0;
+
+    /**
+     * On all dependencies scripts loaded event dispatcher.
+     * @name  FORGE.DependencyManager#_onAllScriptsLoaded
+     * @type {FORGE.EventDispatcher}
+     * @private
+     */
+    this._onAllScriptsLoaded = null;
+
+    FORGE.BaseObject.call(this, "DependencyManager");
+};
+
+FORGE.DependencyManager.prototype = Object.create(FORGE.BaseObject.prototype);
+FORGE.DependencyManager.prototype.constructor = FORGE.DependencyManager;
+
+/**
+ * Add dependency data.
+ * @method FORGE.DependencyManager#add
+ * @param {Object} config - The configuration data.
+ */
+FORGE.DependencyManager.prototype.add = function(config)
+{
+    if(typeof config === "undefined")
+    {
+        return;
+    }
+
+    if(typeof config.url === "string")
+    {
+        this._dependenciesCounter++;
+        this._viewer.load.script(config.url, this._scriptLoadComplete, this);
+    }
+};
+
+/**
+ * Internal callback when a dependency script is loaded.
+ * @method FORGE.DependencyManager#_scriptLoadComplete
+ * @private
+ */
+FORGE.DependencyManager.prototype._scriptLoadComplete = function()
+{
+    this._dependenciesLoaded++;
+
+    this._allScriptsLoaded();
+};
+
+/**
+ * All dependencies are loaded?
+ * @method FORGE.DependencyManager#_allScriptsLoaded
+ * @private
+ */
+FORGE.DependencyManager.prototype._allScriptsLoaded = function()
+{
+    if ((this._dependenciesCounter - this._dependenciesLoaded) === 0)
+    {
+        console.log("DependencyManager : all scripts loaded");
+
+        if(this._onAllScriptsLoaded !== null)
+        {
+            this._onAllScriptsLoaded.dispatch();
+        }
+    }
+};
+
+/**
+ * Destroy method.
+ * @method FORGE.DependencyManager#destroy
+ */
+FORGE.DependencyManager.prototype.destroy = function()
+{
+    this._viewer = null;
+
+    FORGE.BaseObject.prototype.destroy.call(this);
+};
+
+/**
+* Get the number of dependencies.
+* @name FORGE.DependencyManager#dependencies
+* @type {number}
+*/
+Object.defineProperty(FORGE.DependencyManager.prototype, "dependencies",
+{
+    /** @this {FORGE.DependencyManager} */
+    get: function()
+    {
+        return this._dependenciesCounter;
+    }
+});
+
+/**
+ * Get the "onAllDependenciesComplete" {@link FORGE.EventDispatcher} of the DependencyManager.
+ * @name FORGE.DependencyManager#onAllScriptsLoaded
+ * @readonly
+ * @type {FORGE.EventDispatcher}
+ */
+Object.defineProperty(FORGE.DependencyManager.prototype, "onAllScriptsLoaded",
+{
+    /** @this {FORGE.DependencyManager} */
+    get: function()
+    {
+        if(this._onAllScriptsLoaded === null)
+        {
+            this._onAllScriptsLoaded = new FORGE.EventDispatcher(this);
+        }
+
+        return this._onAllScriptsLoaded;
+    }
+});
+
 
 /**
  * Handle the time.
@@ -64998,7 +63424,7 @@ FORGE.Utils.extendSimpleObject = function(from, to, recursive)
 
 /**
  * Extend multiple object you pass in arguments, the last overrides the first and so on ...
- * @method  FORGE.Utils.extendMultipleObjects
+ * @method  FORGE.Utils.extedMultipleObjects
  * @param  {...Object} obj - the objects to merge
  * @return {Object} return the merged objects.
  */
@@ -65416,6 +63842,36 @@ FORGE.Utils.formatTime = function(time, format)
     {
         result = result.replace("s", FORGE.Utils.leftFill(parsed.seconds, 0, s));
     }
+
+    return result;
+};
+
+/**
+ * Get THREE.Spherical object from euler angles.
+ * @method FORGE.Utils.toTHREESpherical
+ * @param {number} radius radius
+ * @param {number} theta theta angle
+ * @param {number} phi phi angle
+ * @return {THREE.Spherical} spherical object
+ */
+FORGE.Utils.toTHREESpherical = function(radius, theta, phi)
+{
+    return new THREE.Spherical(radius, Math.PI / 2 - phi, theta);
+};
+
+/**
+ * Get object with euler angles from a THREE.Spherical object.
+ * @method FORGE.Utils.fromTHREESpherical
+ * @param {THREE.Spherical} spherical spherical object
+ * @return {Object} spherical object
+ */
+FORGE.Utils.fromTHREESpherical = function(spherical)
+{
+    var result = {
+        "radius": spherical.radius,
+        "theta": spherical.theta,
+        "phi": Math.PI / 2 - spherical.phi
+    };
 
     return result;
 };

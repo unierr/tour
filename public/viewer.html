@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+    <head>
+        <title>ForgeJS tutorial</title>
+        <meta charset="utf-8">
+        <style>
+
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #container {
+                height: 100%;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <!-- Include the threejs custom build -->
+        <script src="lib/three.custom.min.js"></script>
+
+        <!-- Include the Hammer.js library -->
+        <script src="lib/hammer.min.js"></script>
+
+        <!-- Include the ForgeJS library -->
+        <script src="lib/forge.min.js" ></script>
+
+        <script>
+
+            // Creation of the FORGE.Viewer
+            var viewer = new FORGE.Viewer("container");
+
+        </script>
+    </body>
+</html>
