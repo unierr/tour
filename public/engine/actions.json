@@ -1,0 +1,33 @@
+[{
+    "uid": "action-ok-0",
+    "target": "viewer.story",
+    "method": {
+        "name": "loadScene",
+        "args": ["scene-ok-0"]
+    }
+}, {
+    "uid": "action-ok-1",
+    "target": "viewer.story",
+    "method": {
+        "name": "loadScene",
+        "args": ["scene-ok-1"]
+    }
+,{"
+uid ":"
+action - hello - 2 ","
+target ":"
+viewer.story ","
+method ":{"
+name ":"
+loadScene ","
+args ":["
+scene - hello - 2 "]}},{"
+uid ":"
+action - hello - 3 ","
+target ":"
+viewer.story ","
+method ":{"
+name ":"
+loadScene ","
+args ":["
+scene - hello - 3 "]}}]

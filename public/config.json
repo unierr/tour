@@ -1,0 +1,751 @@
+{
+    "story": {
+        "camera": {
+            "fov": {
+                "default": 90,
+                "min": 50,
+                "max": 120
+            }
+        },
+        "scenes": [
+            {
+                "uid": "scene-olumpayeh-0",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-0",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_085857.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-0",
+                    "material": {
+                        "image": "images/icons/foot.png"
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 50,
+                            "height": 50
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 150,
+                            "phi": -5
+
+                        },
+
+                        "rotation": {
+                            "x": 80,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                },{
+                    "uid": "hotspot-45654",
+                    "material": {
+                        "image": "images/icons/foot.png"
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 50,
+                            "height": 50
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 10,
+                            "phi": -5
+
+                        },
+
+                        "rotation": {
+                            "x": 80,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                }]
+
+            },
+            {
+                "uid": "scene-olumpayeh-1",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-1",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090038.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-poshtebufe",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 130,
+                            "phi": -7
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-poshtebufe"]
+
+                    }
+                },{
+                    "uid": "hotspot-olumpayeh-vasat-salon",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -55,
+                            "phi": -7
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-salon"]
+
+                    }
+                },{
+                    "uid": "hotspot-0-1",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 40,
+                            "height": 40
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -110,
+                            "phi": -10
+
+                        },
+
+                        "rotation": {
+                            "x": 75,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh--1"]
+
+                    }
+                }, {
+                    "uid": "hotspot-1",
+                    "material": {
+                        "image": "images/icons/door.png",
+                        "opacity": 0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 20,
+                            "height": 20
+                        }
+                    },
+
+                    "facingCenter": true,
+
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 180,
+                            "phi": 1
+
+                        },
+
+                        "rotation": {
+                            "x": 0,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-1"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-2",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-2",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090138.jpg"
+                    }
+                },
+                "hotspots": [
+                    {
+                    "uid": "hotspot-2",
+                    "material": {
+                        "image": "images/icons/door.png",
+                        "opacity": 0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 80,
+                            "height": 80
+                        }
+                    },
+
+                    "facingCenter": true,
+
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -100,
+                            "phi": 1
+
+                        },
+
+                        "rotation": {
+                            "x": 0,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-poshtebufe",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-4",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090240.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-vasat",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -85,
+                            "phi": -12
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                },{
+                    "uid": "hotspot-olumpayeh-poshtebufe-poshtebufe-1",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 150,
+                            "phi": -12
+
+                        },
+
+                        "rotation": {
+                            "x": 75,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-poshtebufe-1"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-poshtebufe-1",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-3",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090338.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-poshtebufe-1-poshtebufe",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -180,
+                            "phi": -12
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-poshtebufe"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-jolotong",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-5",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090603.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-jolotong-vasat",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 90,
+                            "phi": -8
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-salon",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-6",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090639.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-salon-vasat",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 75,
+                            "phi": -12
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-0"]
+
+                    }
+                },{
+                    "uid": "hotspot-olumpayeh-salon-kenaresalon",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": 10,
+                            "phi": -12
+
+                        },
+
+                        "rotation": {
+                            "x": 78,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-kenaresalon"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-kenaresalon",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-7",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090727.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-kenaresalon-salon",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -70,
+                            "phi": -14
+
+                        },
+
+                        "rotation": {
+                            "x": 73,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-salon"]
+
+                    }
+                }]
+            },
+            {
+                "uid": "scene-olumpayeh-mohavate1",
+                "name": "My first scene",
+                "slug": "my-first-scene",
+                "description": "This is my first scene",
+
+                "media": {
+                    "uid": "media-8",
+                    "type": "image",
+
+                    "source": {
+                        "format": "equi",
+                        "url": "images/scenes/20170918_090820.jpg"
+                    }
+                },
+                "hotspots": [{
+                    "uid": "hotspot-olumpayeh-mohavate1-kenaresalon",
+                    "material": {
+                        "image": "images/icons/foot.png",
+                        "opacity":0.8
+                    },
+
+                    "geometry": {
+                        "type": "plane",
+                        "options": {
+                            "width": 30,
+                            "height": 30
+                        }
+                    },
+
+                    "facingCenter": true,
+
+                    "transform": {
+                        "position": {
+                            "radius": 200,
+                            "theta": -70,
+                            "phi": -14
+
+                        },
+
+                        "rotation": {
+                            "x": 73,
+                            "y": 0
+                        }
+                    },
+                    "events": {
+                        "onClick": ["action-olumpayeh-mohavate1"]
+
+                    }
+                }]
+            }
+        ]
+    },
+    "actions": [{
+            "uid": "action-olumpayeh--1",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-0"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-0",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-1"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-1",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-2"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-poshtebufe",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-poshtebufe"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-poshtebufe-1",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-poshtebufe-1"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-salon",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-salon"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-kenaresalon",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-kenaresalon"]
+            }
+        },
+        {
+            "uid": "action-olumpayeh-mohavate1",
+            "target": "viewer.story",
+
+            "method": {
+                "name": "loadScene",
+                "args": ["scene-olumpayeh-mohavate1"]
+            }
+        }
+    ]
+}

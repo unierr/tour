@@ -1,0 +1,305 @@
+<html>
+
+<head>
+    <!--Import Google Icon Font-->
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $(function () {
+            //   $( ".collection-item" ).draggable();
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <style>
+        .thumbnail {
+            max-width: 100px;
+        }
+
+        #preview {
+            position: fixed;
+            background-color: rgba(255, 255, 255, 0.44);
+            z-index: 10000;
+            height: 100%;
+            display: none;
+        }
+
+        #preview-img {}
+    </style>
+    <script>
+        // $(document).ready(function () {
+        //     $('.materialboxed').materialbox();
+        // });
+        $(function () {
+            var autocom = {
+                actions: []
+            };
+            var hotspot_config = {
+                rotation: {
+                    x: 80,
+                    y: 0
+                },
+                radius:200,
+                theta:150,
+                phi:-5,
+                geometry:{
+                    width:50,
+                    height:50
+                }
+            }
+
+
+            var from = [],
+                to = [];
+            var config, scenes;
+
+            var preview=function(){
+                
+            }
+
+            // $("#draggable").draggable();
+            $.getJSON('http://localhost:3000/config.json', function (json) {
+
+                config = json;
+                scenes = json.story.scenes;
+                for (var i = 0; i < scenes.length; i++) {
+                    var ar = "{\"" + config.actions[i].uid + "\":\"http://localhost:3000/" + scenes[i].media
+                        .source.url + "\"}"
+                    // console.log(ar)
+                    autocom.actions.push(JSON.parse(ar))
+                    from.push(`<li object="` + scenes[i] + `" id="from-` + i +
+                        `" class="collection-item from-item avatar" >
+                            <img onClick="preview()" data-caption="` +
+                        scenes[i].uid + `"  src="http://localhost:3000/` +
+                        scenes[i].media.source.url +
+                        `" alt="" class="circle thumbnail materialboxed">
+                            <span class="title">` +
+                        scenes[i].uid + `</span>
+                            <p>` + scenes[i].name +
+                        `
+                            </p>
+                            </li>`
+                    )
+                    to.push(`<li object="` + scenes[i] + `" id="to-` + i +
+                        `" class="collection-item to-item avatar" >
+                            <img onClick="preview()" data-caption="` +
+                        scenes[i].uid + `"  src="http://localhost:3000/` +
+                        scenes[i].media.source.url +
+                        `" alt="" class="circle thumbnail materialboxed">
+                            <span class="title">` +
+                        scenes[i].uid + `</span>
+                            <p>` + scenes[i].name +
+                        `
+                            </p>
+                            </li>`
+                    )
+
+                }
+                $("<ul/>", {
+                    "class": "collection",
+                    "id": "from",
+                    html: from.join("")
+                }).appendTo("#from-container");
+                $("<ul/>", {
+                    "class": "collection",
+                    "id": "to",
+                    html: to.join("")
+                }).appendTo("#to-container");
+                // $('.materialboxed').materialbox();
+                $(".collection-item").draggable({
+                    scroll: true,
+                    revert: true
+                });
+                $('input.autocomplete').autocomplete({
+                    data: autocom.actions,
+                    limit: 20, // The max amount of results that can be shown at once. Default: Infinity.
+                    onAutocomplete: function (val) {
+                        // Callback function when value is autcompleted.
+                    },
+                    minLength: 1, // The minimum length of the input for the autocomplete to start. Default: 1.
+                });
+                $(".to-item").droppable({
+                    accept: ".from-item",
+                    classes: {
+                        "ui-droppable-active": "ui-state-active",
+                        "ui-droppable-hover": "ui-state-hover"
+                    },
+                    drop: function (event, ui) {
+                        $(this)
+                        var findex = ui.draggable.prop('id').replace('from-', '')
+                        var tindex = this.id.replace('to-', '')
+                        console.log(findex, tindex)
+                        var hotspot = {
+                            "uid": "hotspot-" + scenes[findex].uid.replace('scene-', '') +
+                                "=>" + scenes[tindex].uid.replace('scene-', ''),
+                            "material": {
+                                "image": "images/icons/foot.png"
+                            },
+
+                            "geometry": {
+                                "type": "plane",
+                                "options": {
+                                    "width": 50,
+                                    "height": 50
+                                }
+                            },
+
+                            "facingCenter": true,
+
+                            "transform": {
+                                "position": {
+                                    "radius": 200,
+                                    "theta": 150,
+                                    "phi": -5
+
+                                },
+
+                                "rotation": {
+                                    "x": 80,
+                                    "y": 0
+                                }
+                            },
+                            "events": {
+                                "onClick": [scenes[tindex].uid]
+
+                            }
+                        }
+                        console.log('hotspot', JSON.stringify(hotspot))
+                        config.story.scenes[findex].hotspots.push(hotspot);
+                    }
+                });
+                $(".from-item").droppable({
+                    accept: ".to-item",
+                    classes: {
+                        "ui-droppable-active": "ui-state-active",
+                        "ui-droppable-hover": "ui-state-hover"
+                    },
+                    drop: function (event, ui) {
+                        $(this)
+                        var tindex = ui.draggable.prop('id').replace('to-', '')
+                        var findex = this.id.replace('from-', '')
+                        console.log(findex, tindex)
+                        var hotspot = {
+                            "uid": "hotspot-" + scenes[findex].uid.replace('scene-', '') +
+                                "=>" + scenes[tindex].uid.replace('scene-', ''),
+                            "material": {
+                                "image": "images/icons/foot.png"
+                            },
+
+                            "geometry": {
+                                "type": "plane",
+                                "options": {
+                                    "width": 50,
+                                    "height": 50
+                                }
+                            },
+
+                            "facingCenter": true,
+
+                            "transform": {
+                                "position": {
+                                    "radius": 200,
+                                    "theta": 150,
+                                    "phi": -5
+
+                                },
+
+                                "rotation": {
+                                    "x": 80,
+                                    "y": 0
+                                }
+                            },
+                            "events": {
+                                "onClick": [scenes[tindex].uid]
+
+                            }
+                        }
+                        console.log('hotspot', JSON.stringify(hotspot))
+                        config.story.scenes[findex].hotspots.push(hotspot);
+                    }
+                });
+            })
+        });
+    </script>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+</head>
+
+<body>
+
+    <div id="preview" class="row">
+        <div class="col s12 m7">
+            <div id="preview-card" class="card">
+                <div class="card-image">
+                    <img id="preview-img" src="images/sample-1.jpg">
+                    <span class="card-title">Card Title</span>
+                </div>
+                <div class="card-content">
+                    <p>I am a very simple card. I am good at containing small bits of information. I am convenient because I
+                        require little markup to use effectively.</p>
+                </div>
+                <div class="card-action">
+                    <a href="#">This is a link</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <ul class="collection" id="from">
+        <li class="collection-item avatar">
+            <img src="images/yuna.jpg" alt="" class="circle">
+            <span class="title">Title</span>
+            <p>First Line <br> Second Line
+            </p>
+            <a href="#!" class="secondary-content"><i class="material-icons">grade</i></a>
+        </li>
+    </ul> -->
+    <div class="row">
+        <div id="setting-container" class="col s6">
+            <form action="#">
+
+                <p class="range-field">
+                    radius
+                    <input type="range" id="radius" min="0" max="10000" />
+                </p>
+                <p class="range-field">
+                    theta
+                    <input type="range" id="theta" min="-180" max="180" />
+                </p>
+                <p class="range-field">
+                    phi
+                    <input type="range" id="phi" min="-90" max="90" />
+                </p>
+                <div class="input-field col s12">
+
+                    <input type="text" id="action" class="autocomplete">
+                    <label for="autocomplete-input">action</label>
+                </div>
+                <h4>Rotation</h4>
+                <p class="range-field">
+                    x
+                    <input type="range" id="x" min="-90" max="90" />
+                </p>
+                <p class="range-field">
+                    y
+                    <input type="range" id="y" min="-90" max="90" />
+                </p>
+            </form>
+        </div>
+        <div id="preview-container" class="col s6"></div>
+    </div>
+    <div class="row">
+        <div id="from-container" class="col s6">
+            <h1>FROM</h1>
+        </div>
+        <div id="to-container" class="col s6">
+            <h1>TO</h1>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

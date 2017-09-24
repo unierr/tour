@@ -1,0 +1,21 @@
+{
+  "name": "forgejs-json-creator",
+  "version": "0.0.1",
+  "description": "an engine for forgejs config.json",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mrTech",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.5.0",
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.9.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-register": "^6.26.0",
+    "dir-to-json": "0.0.3",
+    "eslint": "^3.1.1"
+  }
+}
