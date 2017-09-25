@@ -85,7 +85,9 @@ function newScene() {
     var last = config.story.scenes.length - 1;
     var scenes;
     var lastScene = config.story.scenes[last];
+    if(lastScene){
     delete lastScene.hotspots;
+}
     var scene = lastScene;
     var media = scene.media;
     media.source = {
